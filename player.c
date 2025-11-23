@@ -132,6 +132,9 @@ static void player_pular(Player *p, ALLEGRO_KEYBOARD_STATE *key_state, World *w)
                     p->on_ground = true;
                 }
             }
+            else if (plat.type == PLAT_TYPE_DANGER){
+                p->take_damage(p);
+            }
         }
     }
 }

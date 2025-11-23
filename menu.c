@@ -37,10 +37,14 @@ static void menu_draw_func(Menu *self){
     }
     
     if (self->spritesheet_btn){
-        float center_x = (256 * self->scale) / 2.0;
+        float btn_scale = self->scale * 1.5;
+        float btn_x = 180 * self->scale;
 
-        float y_jogar = 80 * self->scale;
-        float y_sair = 100 * self->scale;
+        float y_jogar = 20 * self->scale;
+        float y_sair = 40 * self->scale;
+
+        float dst_w = BTN_W * btn_scale;
+        float dst_h = BTN_H * btn_scale;
 
         int col_jogar = (self->select_option == 0) ? 1 : 0;
 
@@ -48,8 +52,8 @@ static void menu_draw_func(Menu *self){
             self->spritesheet_btn,
             col_jogar * BTN_W, 0,
             BTN_W, BTN_H,
-            center_x - ((BTN_W * self->scale)/ 2), y_jogar,
-            BTN_W * self->scale, BTN_H * self->scale,
+            btn_x - ((BTN_W * self->scale)/ 2), y_jogar,
+            dst_w, dst_h,
             0
         );
 
@@ -59,8 +63,8 @@ static void menu_draw_func(Menu *self){
             self->spritesheet_btn,
             col_sair * BTN_W, BTN_H,
             BTN_W, BTN_H,
-            center_x - ((BTN_W * self->scale)/ 2), y_sair,
-            BTN_W * self->scale, BTN_H * self->scale,
+            btn_x - ((BTN_W * self->scale)/ 2), y_sair,
+            dst_w, dst_h,
             0
         );
     }

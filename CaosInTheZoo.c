@@ -1,6 +1,8 @@
 #include <allegro5/allegro5.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_image.h>
+#include <allegro5/allegro_audio.h>
+#include <allegro5/allegro_acodec.h>
 #include <stdio.h>
 
 #include "player.h"
@@ -31,6 +33,10 @@ int main(){
     INIT_TEST(al_init_font_addon(), "font addon");
     INIT_TEST(al_init_image_addon(), "image addon");
     INIT_TEST(al_init_primitives_addon(), "primitives addon");
+    INIT_TEST(al_install_audio(), "audio addon");
+    INIT_TEST(al_init_acodec_addon(), "acodec addon");
+
+    al_reserve_samples(16);
 
     // Inicializacoes das variaveis basicas
     ALLEGRO_TIMER *timer = al_create_timer(1.0 / 60.0);
@@ -72,6 +78,10 @@ int main(){
     Menu *menu = menu_init(5.0);
     INIT_TEST(menu, "menu");
 
+    ALLEGRO_AUDIO_STREAM *bgm = al_load_audio_stream("assets/pixelland.ogg", 4, 2048);
+    INIT_TEST(bgm, "music");
+    al_set_audio_stream_playmode(bgm, ALLEGRO_PLAYMODE_LOOP);
+
     enemies->spawn(enemies, ENT_PENGUIN, 200 * 5.0, 100 * 5.0, 100);
     enemies->spawn(enemies, ENT_BEE, 300 * 5.0, 80 * 5.0, 0);
     enemies->spawn(enemies, ENT_FLOWER, 300 * 5.0, 90 * 5.0, 0);
@@ -104,6 +114,10 @@ int main(){
 
             if (action == MENU_ACTION_PLAY){
                 estado_atual = STAT_PLAYING;
+
+                al_rewind_audio_stream(bgm);
+                al_attach_audio_stream_to_mixer(bgm, al_get_default_mixer());
+                al_set_audio_stream_playing(bgm, true);
             }
             else if (action == MENU_ACTION_QUIT){
                 done = true;
@@ -132,6 +146,7 @@ int main(){
                             enemies->reset_all(enemies);
 
                             camera_x = 0;
+                            al_detach_audio_stream(bgm);
                             
                             estado_atual = STAT_MENU;
                         }
@@ -147,7 +162,25 @@ int main(){
                     break;
                 case ALLEGRO_EVENT_KEY_DOWN:
                     if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
-                        pause = !pause;   
+                        pause = !pause;
+                        
+                        if (pause) {
+                            al_set_audio_stream_playing(bgm, false);
+                        }
+                        else {
+                            al_set_audio_stream_playing(bgm, true);
+                        }
+                    }
+                    else if (ev.keyboard.keycode == ALLEGRO_KEY_Q){
+                        if (pause){
+                            estado_atual = STAT_MENU;
+                            pause = false;
+    
+                            al_set_audio_stream_playing(bgm, false);
+                            giuliano->reset(giuliano);
+                            enemies->reset_all(enemies);
+                            camera_x = 0;
+                        }
                     }
 
                     break;
@@ -180,11 +213,6 @@ int main(){
                     ALLEGRO_ALIGN_CENTER, 
                     "PAUSE"
                 );
-
-                if (pause && ev.keyboard.keycode == ALLEGRO_KEY_M){
-                    estado_atual = STAT_MENU;
-                    pause = false;
-                }
             }
 
             al_flip_display();
@@ -199,6 +227,7 @@ int main(){
     al_destroy_event_queue(queue);
     al_shutdown_font_addon();
     al_destroy_bitmap(spritesheet_player_giuliano);
+    al_destroy_audio_stream(bgm);
 
     return 0;
 }
