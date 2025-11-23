@@ -6,9 +6,15 @@
 #include "player.h"
 #include "world.h"
 #include "entity.h"
+#include "menu.h"
 
 #define X_SCREEN 1280
 #define Y_SCREEN 720
+
+typedef enum {
+    STAT_MENU,
+    STAT_PLAYING
+} GameState;
 
 #define INIT_TEST(test, description) \
     do { \
@@ -63,6 +69,9 @@ int main(){
     EntitiesManager *enemies = entity_init(5.0);
     INIT_TEST(enemies, "inimigos");
 
+    Menu *menu = menu_init(5.0);
+    INIT_TEST(menu, "menu");
+
     enemies->spawn(enemies, ENT_PENGUIN, 200 * 5.0, 100 * 5.0, 100);
     enemies->spawn(enemies, ENT_BEE, 300 * 5.0, 80 * 5.0, 0);
     enemies->spawn(enemies, ENT_FLOWER, 300 * 5.0, 90 * 5.0, 0);
@@ -78,40 +87,61 @@ int main(){
     ALLEGRO_KEYBOARD_STATE ks;
     float camera_x = 0;
 
+    GameState estado_atual = STAT_MENU;
+
     al_start_timer(timer);
     while(!done){
         al_wait_for_event(queue, &ev);
 
-        switch (ev.type){
-            case ALLEGRO_EVENT_TIMER:
-                // ----- LÓGICA -----
-                al_get_keyboard_state(&ks);
-                enemies->update(enemies, giuliano);
-                giuliano->update(giuliano, &ks, world); // CHAMA O UPDATE
-                float player_center_x = giuliano->pos_x + (16 * 5.0 / 2);
-                camera_x = player_center_x - 640;
-                
-                if (camera_x < 0) camera_x = 0;
+        if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE){
+            done = true;
+        }
 
-                float largura_mundo = 7 * (256 * 5.0);
-                if (camera_x > largura_mundo - 1280) camera_x = largura_mundo - 1280;
-                
-                redraw = true;
-                break;
+        if (estado_atual == STAT_MENU){
+            int action = menu->update(menu, &ev);
 
-            case ALLEGRO_EVENT_KEY_DOWN:
-                if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
-                    done = true;
-                }
-                break;
-            case ALLEGRO_EVENT_DISPLAY_CLOSE:
+            if (action == MENU_ACTION_PLAY){
+                estado_atual = STAT_PLAYING;
+            }
+            else if (action == MENU_ACTION_QUIT){
                 done = true;
-                break; 
+            }
+            
+            if (ev.type == ALLEGRO_EVENT_TIMER && al_is_event_queue_empty(queue)){
+                al_clear_to_color(al_map_rgb(255, 255, 255));
+                menu->draw(menu);
+                al_flip_display();
+        }
+
+        }
+
+        else if (estado_atual == STAT_PLAYING){
+            switch (ev.type){
+                case ALLEGRO_EVENT_TIMER:
+                    al_get_keyboard_state(&ks);
+                    enemies->update(enemies, giuliano);
+                    giuliano->update(giuliano, &ks, world); // CHAMA O UPDATE
+                    float player_center_x = giuliano->pos_x + (16 * 5.0 / 2);
+                    camera_x = player_center_x - 640;
+                    
+                    if (camera_x < 0) camera_x = 0;
+        
+                    float largura_mundo = NUM_BG * (256 * 5.0);
+                    if (camera_x > largura_mundo - X_SCREEN) camera_x = largura_mundo - X_SCREEN;
+                    
+                    redraw = true;
+                    break;
+                case ALLEGRO_EVENT_KEY_DOWN:
+                    if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
+                        estado_atual = STAT_MENU;
+                    }
+                    break;
+            }
         }
 
         // ----- DESENHO -----
         if (redraw && al_is_event_queue_empty(queue)){
-            al_clear_to_color(al_map_rgb(255, 255, 255)); // Fundo cinza escuro
+            al_clear_to_color(al_map_rgb(135, 206, 235)); // Fundo cinza escuro
             
             world->draw(world, camera_x);
             enemies->draw(enemies, camera_x);
