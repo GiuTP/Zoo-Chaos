@@ -216,7 +216,7 @@ static void player_animacao(Player *p){
 }
 
 static void player_invencibilidade(Player *p){
-    if (p->invencivel){
+    if (p->invencivel && !p->modo_estrela){
         if (al_get_time() - p->tempo_invencibilidade > 2.5){
             p->invencivel = false;
         }
@@ -297,6 +297,12 @@ static void player_update_func(Player *self, ALLEGRO_KEYBOARD_STATE *ks, World *
 
     player_interagir(self, ks, em);
 
+    if (self->modo_estrela){
+        if (al_get_time() - self->tempo_estrela > 8.0){
+            self->modo_estrela = false;
+        }
+    }
+
     if (self->climbing) {
         player_bordas(self);
     }
@@ -315,7 +321,14 @@ static void player_draw_func(Player *self, float camera_x){
 
     ALLEGRO_COLOR cor_int = al_map_rgb(255, 255, 255);
 
-    if (self->invencivel){
+    if (self->modo_estrela){
+        cor_int = al_map_rgb(255, 215, 0);
+        if ((int)(al_get_time() * 20) % 2 == 0){
+            cor_int = al_map_rgb(255, 255, 200);
+        }
+    }
+
+    else if (self->invencivel){
         int pisca = (int)(al_get_time() * 10) % 2;
 
         if (pisca == 0){
@@ -381,10 +394,42 @@ static void player_draw_func(Player *self, float camera_x){
             );
         }
     }
+
+    if (self->spritesheet_coin){
+        float hud_scale = 1.5;
+        float coin_size = 32;
+
+        float spacing = (coin_size * hud_scale) + 5;
+
+        float start_x = 20;
+        float start_y = 60;
+
+        for (int i = 0; i < 4; i++){
+            ALLEGRO_COLOR cor_moeda;
+
+            if (i < self->coins){
+                cor_moeda = al_map_rgb(255, 255, 255);
+            }
+            else{
+                cor_moeda = al_map_rgb(80, 80, 80);
+            }
+            al_draw_tinted_scaled_bitmap(
+                self->spritesheet_coin,
+                cor_moeda,
+                0, 0,
+                coin_size, coin_size,
+                start_x + (i * spacing),
+                start_y,
+                hud_scale * coin_size,
+                hud_scale * coin_size,
+                0
+            );
+        }
+    }
 }
 
 static void player_take_damage_func(Player *self){
-    if (self->invencivel || self->vida <= 0) return;
+    if (self->invencivel || self->vida <= 0 || self->modo_estrela) return;
 
     self->vida--;
     self->invencivel = true;
@@ -405,6 +450,10 @@ static void player_reset_func(Player *self){
     self->vida = 3;
     self->invencivel = false;
     self->tempo_invencibilidade = 0;
+
+    self->coins = 0;
+    self->modo_estrela = false;
+    self->tempo_estrela = 0;
 }
 
 static void player_destroy_func(Player *self){
@@ -438,6 +487,10 @@ Player *player_init(){
         .invencivel = false,
         .tempo_invencibilidade = 0,
 
+        .coins = 0,
+        .modo_estrela = false,
+        .tempo_estrela = 0,
+
         // ""Métodos"" do player
         .update = player_update_func,
         .draw = player_draw_func,
@@ -448,9 +501,11 @@ Player *player_init(){
 
     p->spritesheet = al_load_bitmap("assets/giu.png");
     p->spritesheet_heart = al_load_bitmap("assets/coracao.png");
+    p->spritesheet_coin = al_load_bitmap("assets/moeda.png");
 
     al_convert_mask_to_alpha(p->spritesheet, al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(p->spritesheet_heart, al_map_rgb(105, 255, 88));
+    al_convert_mask_to_alpha(p->spritesheet_coin, al_map_rgb(105, 255, 88));
 
     return p;
 }

@@ -79,11 +79,16 @@ int main(){
     enemies->spawn(enemies, ENT_SHARK, 600 * 5.0, 80 * 5.0, 100);
     enemies->spawn(enemies, ENT_BIRD, 3840 + (3 * 5.0), 28 * 5.0, 245);
     enemies->spawn(enemies, ENT_VINE, 150 *5.0, 50 * 5.0, 0);
+    enemies->spawn(enemies, ENT_COIN, 150 * 5.0, 30 * 5.0, 0);
+    enemies->spawn(enemies, ENT_COIN, 160 * 5.0, 30 * 5.0, 0);
+    enemies->spawn(enemies, ENT_COIN, 170 * 5.0, 30 * 5.0, 0);
+    enemies->spawn(enemies, ENT_COIN, 180 * 5.0, 30 * 5.0, 0);
 
     // Variaveis de controle
     bool done = false;
     bool redraw = true;
     bool pause = false;
+    float velocidade_bgm = 1.0;
 
     ALLEGRO_EVENT ev;
     ALLEGRO_KEYBOARD_STATE ks;
@@ -135,6 +140,13 @@ int main(){
                         giuliano->update(giuliano, &ks, world, enemies);
                         float player_center_x = giuliano->pos_x + (16 * 5.0 / 2);
                         camera_x = player_center_x - 640;
+
+                        float velocide_atual = (giuliano->modo_estrela) ? 1.5 : 1.0;
+
+                        if (velocidade_bgm != velocide_atual){
+                            al_set_audio_stream_speed(bgm, velocide_atual);
+                            velocidade_bgm = velocide_atual;
+                        }
 
                         if (giuliano->vida <= 0){
                             giuliano->reset(giuliano);

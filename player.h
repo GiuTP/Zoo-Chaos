@@ -33,12 +33,17 @@ struct player{
     float escala;                       // Escala do player
     ALLEGRO_BITMAP *spritesheet;        // Quadros do player
     ALLEGRO_BITMAP *spritesheet_heart;  
+    ALLEGRO_BITMAP *spritesheet_coin;
     
     // Status
     int vida;                           // Vida do player
     bool invencivel;                    // Indica se o player esta invencivel
     int tempo_invencibilidade;          // Tempo de invencibilidade
     bool climbing;
+
+    int coins;
+    bool modo_estrela;
+    double tempo_estrela;
 
 
     // ------- ""Metodos"" do player -------

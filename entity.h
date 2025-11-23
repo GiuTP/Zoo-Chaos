@@ -14,7 +14,8 @@ typedef enum {
     ENT_PENGUIN,
     ENT_PIRANHA,
     ENT_PANDA,
-    ENT_VINE
+    ENT_VINE,
+    ENT_COIN
 } EntityType;
 
 typedef enum {

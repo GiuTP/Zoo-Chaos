@@ -27,10 +27,29 @@ static void update_collision_player(Player *p, Entity *e){
     float eh = e->h;
 
     if (check_overlap(px, py, pw, ph, ex, ey, ew, eh)){
+        if (e->type == ENT_COIN){
+            e->active = false;
+            p->coins++;
+
+            if (p->vida < PLAYER_VIDA_MAX) p->vida++;
+
+            if (p->coins == 4){
+                p->modo_estrela = true;
+                p->tempo_estrela = al_get_time();
+            }
+
+            return;
+        }
+
+        if (p->modo_estrela && e->can_die){
+            e->active = false;
+            e->status = STAT_DEAD;
+            return;
+        }
+
         float pe_player = py + ph;
         float limite_stomp = ey + eh - (5.0 * p->escala);
         bool was_fall = p->vel_y > 0 || !p->on_ground;
-
 
         if (e->can_die && !e->invincible && was_fall && p->vel_y > 0 && pe_player < limite_stomp){
             e->active = false;
@@ -413,9 +432,6 @@ static void entity_spawn_func(EntitiesManager *self, EntityType type,
             e->max_frame = 7;
             break;
         case ENT_VINE:
-            e->x = x;
-            e->y = y;
-
             e->v_x = 3.0;
             e->draw_offset_y = 0.8;
 
@@ -426,6 +442,16 @@ static void entity_spawn_func(EntitiesManager *self, EntityType type,
 
             e->spritesheet = self->spritesheets[ENT_VINE];
             e->max_frame = 3;
+            break;
+        case ENT_COIN:
+            e->w = (16/2) * scale;
+            e->h = (16/2) * scale;
+
+            e->draw_offset_x = 0;
+            e->draw_offset_y = 0;
+
+            e->spritesheet = self->spritesheets[ENT_COIN];
+            e->max_frame = 1;
             break;
     }       
     
@@ -454,8 +480,7 @@ static void entity_update_func(EntitiesManager *self, Player *p){
                 case ENT_VINE:
                     static_ai_vine(e);
                     break;
-                case ENT_BEE:
-                case ENT_FLOWER:
+                default:
                     break;
 
             }
@@ -478,7 +503,7 @@ static void entity_draw_func(EntitiesManager *self, float camera_x){
             
             int row = 0;
 
-            if (e->direction == -1) row = 1;
+            if (e->direction == -1 && e->type != ENT_COIN) row = 1;
 
             if (e->type == ENT_SHARK){
                 if (e->v_y > 0) row = 1;
@@ -520,6 +545,11 @@ static void entity_draw_func(EntitiesManager *self, float camera_x){
                     if (e->type == ENT_BEE){
                         dst_w = 16 * scale;
                         dst_h = 16 * scale;
+                    }
+
+                    else if (e->type == ENT_COIN){
+                        dst_w = (16/2) * scale;
+                        dst_h = (16/2) * scale;
                     }
 
                     al_draw_scaled_bitmap(
@@ -622,6 +652,7 @@ EntitiesManager *entity_init(float game_scale){
     em->spritesheets[ENT_PIRANHA] = al_load_bitmap("assets/piranha.png");
     em->spritesheets[ENT_PANDA] = al_load_bitmap("assets/panda.png");
     em->spritesheets[ENT_VINE] = al_load_bitmap("assets/cipo.png");
+    em->spritesheets[ENT_COIN] = al_load_bitmap("assets/moeda.png");
 
     al_convert_mask_to_alpha(em->spritesheets[ENT_BEE], al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(em->spritesheets[ENT_FLOWER], al_map_rgb(105, 255, 88));
@@ -631,6 +662,7 @@ EntitiesManager *entity_init(float game_scale){
     al_convert_mask_to_alpha(em->spritesheets[ENT_PIRANHA], al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(em->spritesheets[ENT_PANDA], al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(em->spritesheets[ENT_VINE], al_map_rgb(105, 255, 88));
+    al_convert_mask_to_alpha(em->spritesheets[ENT_COIN], al_map_rgb(105, 255, 88));
 
     return em;
 }
