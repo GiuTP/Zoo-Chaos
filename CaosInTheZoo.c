@@ -150,6 +150,16 @@ int main(){
                             
                             estado_atual = STAT_MENU;
                         }
+
+                        float total_width = NUM_BG * (256 * 5.0);
+                        if (giuliano->pos_x > total_width - 100){
+                            giuliano->reset(giuliano);
+                            enemies->reset_all(enemies);
+                            camera_x = 0;
+                            al_set_audio_stream_playing(bgm, false);
+                            
+                            estado_atual = STAT_MENU;                            
+                        }
                         
                         if (camera_x < 0) camera_x = 0;
             
