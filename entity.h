@@ -49,6 +49,7 @@ typedef struct {
     int frame_atual;
     double tempo_animacao;
     int max_frame;
+    double state_timer;
 } Entity;
 
 #define MAX_ENTITIES 50

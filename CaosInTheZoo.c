@@ -65,7 +65,11 @@ int main(){
 
     enemies->spawn(enemies, ENT_PENGUIN, 200 * 5.0, 100 * 5.0, 100);
     enemies->spawn(enemies, ENT_BEE, 300 * 5.0, 80 * 5.0, 0);
-    enemies->spawn(enemies, ENT_PANDA, 400 * 5.0, 80 * 5.0, 0);
+    enemies->spawn(enemies, ENT_FLOWER, 300 * 5.0, 90 * 5.0, 0);
+    enemies->spawn(enemies, ENT_PANDA, 400 * 5.0, 80 * 5.0, 100);
+    enemies->spawn(enemies, ENT_PIRANHA, 400 * 5.0, 50 * 5.0, 200);
+    enemies->spawn(enemies, ENT_SHARK, 600 * 5.0, 80 * 5.0, 100);
+    enemies->spawn(enemies, ENT_BIRD, 3840 + (3 * 5.0), 28 * 5.0, 245);
 
     // Variaveis de controle
     bool done = false;

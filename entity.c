@@ -2,6 +2,7 @@
 #include "player.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 static int check_overlap(float x1, float y1, float w1, float h1,
                          float x2, float y2, float w2, float h2){
@@ -25,7 +26,8 @@ static void update_collision_player(Player *p, Entity *e){
         float limite_stomp = ey + eh - (5.0 * p->escala);
         bool was_fall = p->vel_y > 0 || !p->on_ground;
 
-        if (e->can_die && was_fall && p->vel_y > 0 && pe_player < limite_stomp){
+
+        if (e->can_die && !e->invincible && was_fall && p->vel_y > 0 && pe_player < limite_stomp){
             e->active = false;
             e->status = STAT_DEAD;
 
@@ -45,15 +47,239 @@ static void update_collision_player(Player *p, Entity *e){
     }
 }
 
-static void update_animation(Entity *e){
-    if (e->status == STAT_DEAD) return;
+static void update_entity_properties(Entity *e, float scale){
+    if (e->type == ENT_PENGUIN){
+        float pe_y = e->y + e->h;
+        if (e->status == STAT_SLIDE){
+            e->w = 15 * scale;
+            e->h = 7 * scale;
+
+            e->draw_offset_x = -8 * scale;
+            e->draw_offset_y = -15 * scale;
+        }
+        else {
+            e->w = 7 * scale;
+            e->h = 11 * scale;
+
+            e->draw_offset_x = -12 * scale;
+            e->draw_offset_y = -9 * scale;
+        }
+        e->y = pe_y - e->h;
+    }
+    else if (e->type == ENT_PANDA){
+        if (e->status == STAT_ROLL){
+            e->invincible = true;
+        }
+        else {
+            e->invincible = false;
+        }
+    }
 }
 
-static void update_ai_patrol(Entity *e);
+static void update_animation(Entity *e){
+    if (e->status == STAT_DEAD) return;
 
-static void update_ai_shark(Entity *e);
+    double time_now = al_get_time();
 
-static void update_ai_bird(Entity *e);
+    int start_frame = 0;
+    int end_frame = 0;
+    double delay = 0.2;
+
+    switch (e->type){
+        case ENT_PANDA:
+            if (e->status == STAT_ROLL){
+                start_frame = 2;
+                end_frame = 5;
+                delay = 0.05;
+            }
+            else if (e->status == STAT_WALK){
+                start_frame = 0;
+                end_frame = 1;
+                delay = 0.2;
+            }
+            else {
+                start_frame = end_frame = 0;
+            }
+            break;
+        case ENT_PENGUIN:
+            if (e->status == STAT_SLIDE){
+                start_frame = 2;
+                end_frame = 2;
+            }
+            else {
+                start_frame = 0;
+                end_frame = 1;
+                delay = 0.2;
+            }
+            break;
+        case ENT_BEE:
+            start_frame = 0;
+            end_frame = 2;
+            delay = 0.2;
+            break;
+        case ENT_BIRD:
+            if (e->status == STAT_IDLE){
+                e->frame_atual = 0;
+            }
+            else {
+                if (e->v_y > 0) e->frame_atual = 2;
+                else e->frame_atual = 1;
+            }
+
+            return;
+            break;
+        default:
+            start_frame = 0;
+            end_frame = e->max_frame - 1;
+            delay = 0.3;
+            break;
+        
+    }
+
+    if (e->frame_atual < start_frame || e->frame_atual > end_frame){
+        e->frame_atual = start_frame;
+    }
+
+    if (start_frame == end_frame){
+        e->frame_atual = start_frame;
+        return;
+    }
+
+    if (time_now - e->tempo_animacao >= delay){
+        e->frame_atual++;
+
+        if (e->frame_atual > end_frame){
+            e->frame_atual = start_frame;
+        }
+
+        e->tempo_animacao = time_now;
+    }
+}
+
+static void update_ai_patrol(Entity *e){
+    double dt = 1.0 / 60.0;
+
+    if (e->status == STAT_IDLE) {
+        e->state_timer += dt;
+
+        if (e->state_timer > 1.5){
+            if (e->type == ENT_PENGUIN){
+                e->status = STAT_SLIDE;
+            }
+
+            else {
+                e->status = STAT_WALK;
+            }
+            
+            e->state_timer = 0;
+        }
+
+        return;
+    }
+
+    float current_speed = e->v_x;
+
+    if (e->status == STAT_SLIDE) current_speed *= 2.0;
+    if (e->status == STAT_ROLL) current_speed *= 1.5;
+
+    e->x += current_speed * e->direction;
+
+    if (e->type == ENT_PANDA){
+        e->state_timer += dt;
+        if (e->status == STAT_WALK && e->state_timer > 1.0){
+            e->status = STAT_ROLL;
+            e->state_timer = 0;
+        }
+    }
+
+    if ((e->direction == 1 && e->x >= e->end_x) ||
+        (e->direction == -1 && e->x <= e->start_x)){
+        
+        if (e->direction == 1) e->x = e->end_x;
+        else e->x = e->start_x;
+
+        e->direction *= -1;
+
+        e->status = STAT_IDLE;
+        e->state_timer = 0;
+    }
+}
+
+static void update_ai_shark(Entity *e){
+    double dt = 1.0 / 60.0;
+
+    if (e->status == STAT_IDLE){
+        e->state_timer += dt;
+
+        if (e->state_timer > 2.0){
+            e->status = STAT_JUMP;
+
+            e->v_y = -14.0;
+
+            e->state_timer = 0;
+        }
+    }
+    else if (e->status == STAT_JUMP){
+        e->v_y += 0.5;
+        e->y += e->v_y;
+
+        if (e->y >= e->start_y && e->v_y > 0){
+            e->y = e->start_y;
+            e->v_y = 0;
+            e->status = STAT_IDLE;
+        }
+    }
+}
+
+
+static void update_ai_bird(Entity *e){
+    double dt = 1.0 / 60.0;
+
+    if (e->status == STAT_IDLE){
+        e->state_timer += dt;
+
+        if (e->state_timer > 1.0){
+            e->status = STAT_FLY;
+
+            e->v_y = (e->v_y < 0) ? -e->v_y : e->v_y;
+
+            e->state_timer = 0;
+        }
+
+        return;
+    }
+
+    e->x += e->v_x * e->direction;
+
+    if ((e->direction == 1 && e->x >= e->end_x) ||
+        (e->direction == -1 && e->x <= e->start_x)){
+
+        if (e->direction == 1) e->x = e->end_x;
+        else e->x = e->start_x;
+
+        e->direction *= -1;
+
+        e->y = e->start_y;
+        e->status = STAT_IDLE;
+        e->state_timer = 0;
+
+        return;
+    }
+
+    e->y += e->v_y;
+
+    float teto = e->start_y;
+    float chao_aereo = e->start_y + (76.0 * 5.0);
+
+    if (e->y >= chao_aereo && e->v_y > 0){
+        e->y = chao_aereo;
+        e->v_y *= -1;
+    }
+    else if (e->y <= teto && e->v_y < 0){
+        e->y = teto;
+        e->v_y *= -1;
+    }
+}
 
 static void entity_spawn_func(EntitiesManager *self, EntityType type, 
                                 float x, float y, float range_dist){
@@ -79,6 +305,7 @@ static void entity_spawn_func(EntitiesManager *self, EntityType type,
 
     e->frame_atual = 0;
     e->tempo_animacao = 0;
+    e->state_timer = 0;
 
     e->invincible = false;
     e->can_die = false;
@@ -97,7 +324,7 @@ static void entity_spawn_func(EntitiesManager *self, EntityType type,
             e->max_frame = 3;
             break;
         case ENT_FLOWER:
-            e->w = 10 * scale;
+            e->w = 12 * scale;
             e->h = 13 * scale;
 
             e->draw_offset_x = -10 * scale;
@@ -126,8 +353,9 @@ static void entity_spawn_func(EntitiesManager *self, EntityType type,
             e->w = 15 * scale;
             e->h = 12 * scale;
 
-            e->v_x = 2.0;
-            e->v_y = 1.0;
+            e->v_x = 6.0;
+            float ratio = 76.0 / 125.0;
+            e->v_y = e->v_x * ratio;
 
             e->draw_offset_x = -10 * scale;
             e->draw_offset_y = -9 * scale;
@@ -142,12 +370,12 @@ static void entity_spawn_func(EntitiesManager *self, EntityType type,
             e->w = 7 * scale;
             e->h = 11 * scale;
 
-            e->v_x = 1.0;
+            e->v_x = 3.0;
 
             e->draw_offset_x = -12 * scale;
             e->draw_offset_y = -9 * scale;
 
-            e->status = STAT_WALK;
+            e->status = STAT_IDLE;
             e->can_die = true;
 
             e->spritesheet = self->spritesheets[ENT_PENGUIN];
@@ -155,12 +383,12 @@ static void entity_spawn_func(EntitiesManager *self, EntityType type,
             break;
         case ENT_PIRANHA:
             e->w = 12 * scale;
-            e->h = 8 * scale;
+            e->h = 6 * scale;
 
             e->v_x = 2.0;
 
             e->draw_offset_x = -10 * scale;
-            e->draw_offset_y = -12 * scale;
+            e->draw_offset_y = -13 * scale;
 
             e->status = STAT_WALK;
 
@@ -191,6 +419,28 @@ static void entity_update_func(EntitiesManager *self, Player *p){
     for (int i = 0; i < self->num_entities; i++){
         Entity *e = &self->entities[i];
         if (e->active){
+
+            switch (e->type){
+                case ENT_PENGUIN:
+                case ENT_PANDA:
+                case ENT_PIRANHA:
+                    update_ai_patrol(e);
+                    break;
+
+                case ENT_SHARK:
+                    update_ai_shark(e);
+                    break;
+
+                case ENT_BIRD:
+                    update_ai_bird(e);
+                    break;
+                case ENT_BEE:
+                case ENT_FLOWER:
+                    break;
+
+            }
+
+            update_entity_properties(e, self->scale);
             update_animation(e);
             update_collision_player(p, e);
         }
@@ -203,11 +453,8 @@ static void entity_draw_func(EntitiesManager *self, float camera_x){
     for (int i = 0; i < self->num_entities; i++){
         Entity *e = &self->entities[i];
 
-        if (e->active){
-            int frame_calc = 0;
-            if (e->max_frame > 0){
-                frame_calc = (int)(al_get_time() * 6.0) % e->max_frame;
-            }
+        if (e->active && e->spritesheet){
+            int frame_to_draw = e->frame_atual;
             
             int row = 0;
 
@@ -232,7 +479,7 @@ static void entity_draw_func(EntitiesManager *self, float camera_x){
 
                 al_draw_scaled_bitmap(
                     e->spritesheet,
-                    frame_calc * 32, row * 32,
+                    frame_to_draw * 32, row * 32,
                     32, 32,
 
                     tela_x, tela_y,
