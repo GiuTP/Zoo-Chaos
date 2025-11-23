@@ -69,6 +69,7 @@ struct entities_manager{
     void (*update)(EntitiesManager *self, Player *p);
     void (*draw)(EntitiesManager *self, float camera_x);
     void (*destroy)(EntitiesManager *self);
+    void (*reset_all)(EntitiesManager *self);
 };
 
 EntitiesManager *entity_init(float game_scale);

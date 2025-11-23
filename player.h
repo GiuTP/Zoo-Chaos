@@ -33,14 +33,15 @@ struct player{
     // Status
     int vida;                           // Vida do player
     bool invencivel;                    // Indica se o player esta invencivel
-    int tempo_invencibilidade_inicio;   // Tempo de invencibilidade
+    int tempo_invencibilidade;          // Tempo de invencibilidade
 
 
     // ------- ""Metodos"" do player -------
     void (*update)(Player *self, ALLEGRO_KEYBOARD_STATE *ks, World *world); // Atualiza o player
     void (*draw)(Player *self, float camera_x);                               // Desenha o player
-    // void (*take_damage)(Player *self);                        // Tomar dano
+    void (*take_damage)(Player *self);                        // Tomar dano
     void (*destroy)(Player *self);                            // ""Destrutor"" o player
+    void (*reset)(Player *self);                              // Reseta o player
 };
 
 // ""Construtor"" do player

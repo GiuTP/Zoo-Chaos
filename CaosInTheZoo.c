@@ -83,6 +83,8 @@ int main(){
     // Variaveis de controle
     bool done = false;
     bool redraw = true;
+    bool pause = false;
+
     ALLEGRO_EVENT ev;
     ALLEGRO_KEYBOARD_STATE ks;
     float camera_x = 0;
@@ -118,23 +120,36 @@ int main(){
         else if (estado_atual == STAT_PLAYING){
             switch (ev.type){
                 case ALLEGRO_EVENT_TIMER:
-                    al_get_keyboard_state(&ks);
-                    enemies->update(enemies, giuliano);
-                    giuliano->update(giuliano, &ks, world); // CHAMA O UPDATE
-                    float player_center_x = giuliano->pos_x + (16 * 5.0 / 2);
-                    camera_x = player_center_x - 640;
-                    
-                    if (camera_x < 0) camera_x = 0;
-        
-                    float largura_mundo = NUM_BG * (256 * 5.0);
-                    if (camera_x > largura_mundo - X_SCREEN) camera_x = largura_mundo - X_SCREEN;
+                    if (!pause){
+                        al_get_keyboard_state(&ks);
+                        enemies->update(enemies, giuliano);
+                        giuliano->update(giuliano, &ks, world); // CHAMA O UPDATE
+                        float player_center_x = giuliano->pos_x + (16 * 5.0 / 2);
+                        camera_x = player_center_x - 640;
+
+                        if (giuliano->vida <= 0){
+                            giuliano->reset(giuliano);
+                            enemies->reset_all(enemies);
+
+                            camera_x = 0;
+                            
+                            estado_atual = STAT_MENU;
+                        }
+                        
+                        if (camera_x < 0) camera_x = 0;
+            
+                        float largura_mundo = NUM_BG * (256 * 5.0);
+                        if (camera_x > largura_mundo - X_SCREEN) camera_x = largura_mundo - X_SCREEN;
+                    }
                     
                     redraw = true;
+
                     break;
                 case ALLEGRO_EVENT_KEY_DOWN:
                     if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
-                        estado_atual = STAT_MENU;
+                        pause = !pause;   
                     }
+
                     break;
             }
         }
@@ -146,6 +161,31 @@ int main(){
             world->draw(world, camera_x);
             enemies->draw(enemies, camera_x);
             giuliano->draw(giuliano, camera_x);
+
+            char texto_vida[20];
+            sprintf(texto_vida, "VIDA: %d", giuliano->vida);
+            ALLEGRO_COLOR cor_vida = al_map_rgb(255, 255, 255);
+            if (giuliano->vida == 1) cor_vida = al_map_rgb(255, 0, 0);
+            al_draw_text(font, cor_vida, 20, 20, 0, texto_vida);
+
+            if (pause){
+                al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+                al_draw_filled_rectangle(0, 0, X_SCREEN, Y_SCREEN, al_map_rgba(0, 0, 0, 100));
+
+                al_draw_text(
+                    font, 
+                    al_map_rgb(255, 255, 255), 
+                    X_SCREEN / 2, 
+                    Y_SCREEN / 2, 
+                    ALLEGRO_ALIGN_CENTER, 
+                    "PAUSE"
+                );
+
+                if (pause && ev.keyboard.keycode == ALLEGRO_KEY_M){
+                    estado_atual = STAT_MENU;
+                    pause = false;
+                }
+            }
 
             al_flip_display();
             redraw = false;

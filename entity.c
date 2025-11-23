@@ -11,10 +11,13 @@ static int check_overlap(float x1, float y1, float w1, float h1,
 }
 
 static void update_collision_player(Player *p, Entity *e){
+    float h_visual = (p->duck) ? 10 : 18;
+    float off_y_visual = (p->duck) ? 15 : 7;
+
     float px = p->pos_x + (11 * p->escala);
-    float py = p->pos_y + (7 * p->escala);
+    float py = p->pos_y + (off_y_visual * p->escala);
     float pw = 9 * p->escala;
-    float ph = 18 * p->escala;
+    float ph = h_visual * p->escala;
 
     float ex = e->x;
     float ey = e->y;
@@ -34,15 +37,7 @@ static void update_collision_player(Player *p, Entity *e){
             p->vel_y = -10.0;
         }
         else{
-            if (!p->invencivel){
-                // p->vida--;
-                p->invencivel = true;
-                // p->tempo_invencibilidade_inicio = al_get_time();
-    
-                p->vel_y = -4.0;
-                if (p->pos_x < e->x) p->vel_x = -5.0;
-                else p->vel_x = 5.0;
-            }
+            p->take_damage(p);
         }
     }
 }
@@ -497,6 +492,49 @@ static void entity_draw_func(EntitiesManager *self, float camera_x){
     }
 }
 
+static void entity_reset_all_func(EntitiesManager *self){
+    for (int i = 0; i < self->num_entities; i++){
+        Entity *e = &self->entities[i];
+        
+        e->active = true;
+        e->x = e->start_x;
+        e->y = e->start_y;
+
+        e->v_x = 0;
+        e->v_y = 0;
+        e->state_timer = 0;
+        e->direction = 1;
+
+        switch (e->type){
+            case ENT_SHARK:
+                e->status = STAT_IDLE;
+                e->v_y = 0;
+                break;
+            case ENT_BIRD:
+                e->status = STAT_FLY;
+                e->v_x = 5.0;
+                float ratio = 76.0 / 125.0;
+                e->v_y = e->v_x * ratio;
+                break;
+            case ENT_PENGUIN:
+                e->status = STAT_IDLE;
+                e->v_x = 1.0;
+                break;
+            case ENT_PANDA:
+                e->status = STAT_WALK;
+                e->v_x = 1.5;
+                break;
+            case ENT_PIRANHA:
+                e->status = STAT_WALK;
+                e->v_x = 2.0;
+                break;
+            default:
+                e->status = STAT_IDLE;
+                break;
+        }
+    }
+}
+
 static void entity_destroy_func(EntitiesManager *self){
     for (int i = 0; i < NUM_ENTITIES_SPRITESHEET; i++){
         al_destroy_bitmap(self->spritesheets[i]);
@@ -516,7 +554,8 @@ EntitiesManager *entity_init(float game_scale){
         .spawn = entity_spawn_func,
         .update = entity_update_func,
         .draw = entity_draw_func,
-        .destroy = entity_destroy_func
+        .destroy = entity_destroy_func,
+        .reset_all = entity_reset_all_func
     };
 
     for (int i = 0; i < NUM_ENTITIES_SPRITESHEET; i++)
