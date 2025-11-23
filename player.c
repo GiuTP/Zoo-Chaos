@@ -1,4 +1,5 @@
 #include "player.h"
+#include <math.h>
 
 // Constantes Internas
 #define PLAYER_VIDA_INICIAL 3
@@ -13,6 +14,8 @@
 
 #define PLAYER_HITBOX_HEIGHT 16
 #define PLAYER_HITBOX_OFFSET_Y 9
+
+#define PLAYER_CLIMB_FRAME 5
 
 static int check_aabb_collision(float x1, float y1, float w1, float h1,
                                 float x2, float y2, float w2, float h2){
@@ -173,6 +176,12 @@ static void player_bordas(Player *p){
 }
 
 static void player_animacao(Player *p){
+
+    if (p->climbing){
+        p->frame_atual = PLAYER_CLIMB_FRAME;
+        return;
+    }
+
     double now = al_get_time();
 
     if (!p->on_ground){
@@ -214,13 +223,90 @@ static void player_invencibilidade(Player *p){
     }
 }
 
-static void player_update_func(Player *self, ALLEGRO_KEYBOARD_STATE *ks, World *world){
-    
-    player_aplicar_gravidade(self);
-    player_pular(self, ks, world);
-    player_abaixar(self, ks);
-    player_andar(self, ks, world);
-    player_bordas(self);
+static void player_interagir(Player *p, ALLEGRO_KEYBOARD_STATE *ks, EntitiesManager *em){
+    bool interagindo_com_algum_cipo = false;
+
+    float ajuste_visual_x = -80.0;
+    float ajuste_visual_y = -10.0;
+
+    for (int i = 0; i < em->num_entities; i++){
+        Entity *e = &em->entities[i];
+
+        if (e->type == ENT_VINE){
+            
+            float angulo = e->draw_offset_x;
+            float len = e->h;
+
+            float pivo_x = e->x + (16 * em->scale); 
+            float pivo_y = e->y;
+
+            float tip_x = pivo_x - (sin(angulo) * len);
+            float tip_y = pivo_y + (cos(angulo) * len);
+
+            float player_half_w = 16 * p->escala;
+            float player_half_h = 16 * p->escala;
+
+            float player_center_x = p->pos_x + player_half_w - ajuste_visual_x;
+            float player_center_y = p->pos_y + player_half_h - ajuste_visual_y;
+
+            float dx = player_center_x - tip_x;
+            float dy = player_center_y - tip_y;
+            float dist = sqrt(dx * dx + dy * dy);
+
+            if (p->climbing) {
+                if (dist < 200) { 
+                    
+                    p->pos_x = tip_x - player_half_w + ajuste_visual_x;
+                    p->pos_y = tip_y - player_half_h + ajuste_visual_y;
+                    
+                    p->vel_x = 0;
+                    p->vel_y = 0;
+
+                    interagindo_com_algum_cipo = true;
+
+                    if (al_key_down(ks, ALLEGRO_KEY_J)){
+                        p->climbing = false;
+                        p->on_ground = false;
+                        p->vel_y = JUMP_FORCE;
+                    }
+                    return; 
+                }
+            }
+            else {
+                float raio = 80.0;
+
+                if (al_key_down(ks, ALLEGRO_KEY_K) && dist < raio && !p->on_ground) {
+                    p->climbing = true;
+                    p->on_ground = false;
+                    
+                    p->pos_x = tip_x - player_half_w + ajuste_visual_x;
+                    p->pos_y = tip_y - player_half_h + ajuste_visual_y;
+                    
+                    return;
+                }
+            }
+        }
+    }
+
+    if (p->climbing && !interagindo_com_algum_cipo) {
+         p->climbing = false;
+    }
+}
+
+static void player_update_func(Player *self, ALLEGRO_KEYBOARD_STATE *ks, World *world, EntitiesManager *em){
+
+    player_interagir(self, ks, em);
+
+    if (self->climbing) {
+        player_bordas(self);
+    }
+    else{
+        player_aplicar_gravidade(self);
+        player_pular(self, ks, world);
+        player_abaixar(self, ks);
+        player_andar(self, ks, world);
+        player_bordas(self);
+    }
     player_animacao(self);
     player_invencibilidade(self);
 }
@@ -272,6 +358,29 @@ static void player_draw_func(Player *self, float camera_x){
         al_map_rgb(255, 0, 0),
         1
     );
+
+    if (self->spritesheet_heart){
+        float hud_scale = 1.1;
+        float spacing = (HEART_SIZE * hud_scale) + 5;
+
+        float start_x = 20;
+        float start_y = 20;
+
+        for (int i = 0; i < PLAYER_VIDA_MAX; i++){
+            int frame_x = (i < self->vida) ? 0 : HEART_SIZE;
+
+            al_draw_scaled_bitmap(
+                self->spritesheet_heart,
+                frame_x, 0,
+                HEART_SIZE, HEART_SIZE,
+                start_x + (i * spacing),
+                start_y,
+                hud_scale * HEART_SIZE,
+                hud_scale * HEART_SIZE,
+                0
+            );
+        }
+    }
 }
 
 static void player_take_damage_func(Player *self){
@@ -302,7 +411,7 @@ static void player_destroy_func(Player *self){
     free(self);
 }
 
-Player *player_init(ALLEGRO_BITMAP *spritesheet){
+Player *player_init(){
     Player *p;
     if(!(p = malloc(sizeof(Player)))) return NULL;
     
@@ -317,15 +426,15 @@ Player *player_init(ALLEGRO_BITMAP *spritesheet){
         .on_ground = true,
         .duck = false,
         .andando = false,
+        .climbing = false,
         
         // Sprites
         .frame_atual = 0,
         .sprite_y_origem = 0,
         .escala = 5.0,
-        .spritesheet = spritesheet,
 
         // Status
-        .vida = 3,
+        .vida = PLAYER_VIDA_MAX,
         .invencivel = false,
         .tempo_invencibilidade = 0,
 
@@ -336,6 +445,12 @@ Player *player_init(ALLEGRO_BITMAP *spritesheet){
         .destroy = player_destroy_func,
         .reset = player_reset_func,
     };
+
+    p->spritesheet = al_load_bitmap("assets/giu.png");
+    p->spritesheet_heart = al_load_bitmap("assets/coracao.png");
+
+    al_convert_mask_to_alpha(p->spritesheet, al_map_rgb(105, 255, 88));
+    al_convert_mask_to_alpha(p->spritesheet_heart, al_map_rgb(105, 255, 88));
 
     return p;
 }

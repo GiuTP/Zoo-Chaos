@@ -13,7 +13,8 @@ typedef enum {
     ENT_BIRD,
     ENT_PENGUIN,
     ENT_PIRANHA,
-    ENT_PANDA
+    ENT_PANDA,
+    ENT_VINE
 } EntityType;
 
 typedef enum {

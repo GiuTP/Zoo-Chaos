@@ -13,11 +13,6 @@
 #define X_SCREEN 1280
 #define Y_SCREEN 720
 
-typedef enum {
-    STAT_MENU,
-    STAT_PLAYING
-} GameState;
-
 #define INIT_TEST(test, description) \
     do { \
         if (!(test)){ \
@@ -53,12 +48,6 @@ int main(){
 
     al_set_new_bitmap_flags(ALLEGRO_CONVERT_BITMAP | ALLEGRO_ALPHA_TEST);
     al_set_new_bitmap_format(ALLEGRO_PIXEL_FORMAT_ANY_WITH_ALPHA);
-    
-    ALLEGRO_BITMAP *spritesheet_player_giuliano = al_load_bitmap("assets/giu.png");
-    INIT_TEST(spritesheet_player_giuliano, "giu.png");
-
-    al_set_target_bitmap(spritesheet_player_giuliano);
-    al_convert_mask_to_alpha(spritesheet_player_giuliano, al_map_rgb(105, 255, 88));
     al_set_target_bitmap(al_get_backbuffer(display));
 
     // Registrando as fontes da fila de evento 
@@ -66,7 +55,7 @@ int main(){
     al_register_event_source(queue, al_get_display_event_source(display));
     al_register_event_source(queue, al_get_timer_event_source(timer));
 
-    Player *giuliano = player_init(spritesheet_player_giuliano);
+    Player *giuliano = player_init();
     INIT_TEST(giuliano, "jogador");
 
     World *world = world_init();
@@ -89,6 +78,7 @@ int main(){
     enemies->spawn(enemies, ENT_PIRANHA, 400 * 5.0, 50 * 5.0, 200);
     enemies->spawn(enemies, ENT_SHARK, 600 * 5.0, 80 * 5.0, 100);
     enemies->spawn(enemies, ENT_BIRD, 3840 + (3 * 5.0), 28 * 5.0, 245);
+    enemies->spawn(enemies, ENT_VINE, 150 *5.0, 50 * 5.0, 0);
 
     // Variaveis de controle
     bool done = false;
@@ -109,10 +99,16 @@ int main(){
             done = true;
         }
 
-        if (estado_atual == STAT_MENU){
-            int action = menu->update(menu, &ev);
+        if (estado_atual == STAT_MENU || estado_atual == STAT_WIN || estado_atual == STAT_LOSE){
+            int action = menu->update(menu, &ev, estado_atual);
 
             if (action == MENU_ACTION_PLAY){
+                if (estado_atual == STAT_WIN || estado_atual == STAT_LOSE){
+                    giuliano->reset(giuliano);
+                    enemies->reset_all(enemies);
+                    camera_x = 0;
+                }
+
                 estado_atual = STAT_PLAYING;
 
                 al_rewind_audio_stream(bgm);
@@ -125,10 +121,9 @@ int main(){
             
             if (ev.type == ALLEGRO_EVENT_TIMER && al_is_event_queue_empty(queue)){
                 al_clear_to_color(al_map_rgb(255, 255, 255));
-                menu->draw(menu);
+                menu->draw(menu, estado_atual);
                 al_flip_display();
-        }
-
+            }
         }
 
         else if (estado_atual == STAT_PLAYING){
@@ -137,7 +132,7 @@ int main(){
                     if (!pause){
                         al_get_keyboard_state(&ks);
                         enemies->update(enemies, giuliano);
-                        giuliano->update(giuliano, &ks, world); // CHAMA O UPDATE
+                        giuliano->update(giuliano, &ks, world, enemies);
                         float player_center_x = giuliano->pos_x + (16 * 5.0 / 2);
                         camera_x = player_center_x - 640;
 
@@ -148,7 +143,7 @@ int main(){
                             camera_x = 0;
                             al_detach_audio_stream(bgm);
                             
-                            estado_atual = STAT_MENU;
+                            estado_atual = STAT_LOSE;
                         }
 
                         float total_width = NUM_BG * (256 * 5.0);
@@ -158,7 +153,7 @@ int main(){
                             camera_x = 0;
                             al_set_audio_stream_playing(bgm, false);
                             
-                            estado_atual = STAT_MENU;                            
+                            estado_atual = STAT_WIN;                            
                         }
                         
                         if (camera_x < 0) camera_x = 0;
@@ -205,12 +200,6 @@ int main(){
             enemies->draw(enemies, camera_x);
             giuliano->draw(giuliano, camera_x);
 
-            char texto_vida[20];
-            sprintf(texto_vida, "VIDA: %d", giuliano->vida);
-            ALLEGRO_COLOR cor_vida = al_map_rgb(255, 255, 255);
-            if (giuliano->vida == 1) cor_vida = al_map_rgb(255, 0, 0);
-            al_draw_text(font, cor_vida, 20, 20, 0, texto_vida);
-
             if (pause){
                 al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
                 al_draw_filled_rectangle(0, 0, X_SCREEN, Y_SCREEN, al_map_rgba(0, 0, 0, 100));
@@ -236,7 +225,6 @@ int main(){
     al_destroy_timer(timer);
     al_destroy_event_queue(queue);
     al_shutdown_font_addon();
-    al_destroy_bitmap(spritesheet_player_giuliano);
     al_destroy_audio_stream(bgm);
 
     return 0;

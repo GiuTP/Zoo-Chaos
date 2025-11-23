@@ -11,6 +11,8 @@ static int check_overlap(float x1, float y1, float w1, float h1,
 }
 
 static void update_collision_player(Player *p, Entity *e){
+    if (e->type == ENT_VINE) return;
+
     float h_visual = (p->duck) ? 10 : 18;
     float off_y_visual = (p->duck) ? 15 : 7;
 
@@ -276,6 +278,11 @@ static void update_ai_bird(Entity *e){
     }
 }
 
+static void static_ai_vine(Entity *e){
+    e->draw_offset_x = sin(al_get_time() * e->v_x) * e->draw_offset_y;
+
+}
+
 static void entity_spawn_func(EntitiesManager *self, EntityType type, 
                                 float x, float y, float range_dist){
     if (self->num_entities >= MAX_ENTITIES) return;
@@ -405,6 +412,21 @@ static void entity_spawn_func(EntitiesManager *self, EntityType type,
             e->spritesheet = self->spritesheets[ENT_PANDA];
             e->max_frame = 7;
             break;
+        case ENT_VINE:
+            e->x = x;
+            e->y = y;
+
+            e->v_x = 3.0;
+            e->draw_offset_y = 0.8;
+
+            e->w = 32 * scale;
+            e->h = 32 * scale;
+
+            e->can_die = false;
+
+            e->spritesheet = self->spritesheets[ENT_VINE];
+            e->max_frame = 3;
+            break;
     }       
     
     self->num_entities++;
@@ -429,6 +451,9 @@ static void entity_update_func(EntitiesManager *self, Player *p){
                 case ENT_BIRD:
                     update_ai_bird(e);
                     break;
+                case ENT_VINE:
+                    static_ai_vine(e);
+                    break;
                 case ENT_BEE:
                 case ENT_FLOWER:
                     break;
@@ -443,7 +468,7 @@ static void entity_update_func(EntitiesManager *self, Player *p){
 }
 
 static void entity_draw_func(EntitiesManager *self, float camera_x){
-    float sclale = self->scale;
+    float scale = self->scale;
 
     for (int i = 0; i < self->num_entities; i++){
         Entity *e = &self->entities[i];
@@ -461,33 +486,58 @@ static void entity_draw_func(EntitiesManager *self, float camera_x){
             }
 
             if (e->spritesheet){
-                float tela_x = (e->x - camera_x) + e->draw_offset_x;
-                float tela_y = e->y + e->draw_offset_y;
+                if (e->type == ENT_VINE){
+                    float cx = 16;
+                    float cy = 0;
 
-                float dst_w = 32 * sclale;
-                float dst_h = 32 * sclale;
+                    float angulo = e->draw_offset_x;
+                    int frame_vine = 32;
 
-                if (e->type == ENT_BEE){
-                    dst_w = 16 * sclale;
-                    dst_h = 16 * sclale;
+                    ALLEGRO_BITMAP *sub_frame = al_create_sub_bitmap(e->spritesheet, frame_vine, 0, 32, 32);
+                    if (sub_frame){
+                        al_draw_scaled_rotated_bitmap(
+                            sub_frame,
+                            cx, cy,
+    
+                            e->x - camera_x, e->y,
+                            
+                            scale, scale,
+                            angulo, 0
+                        );
+                        al_destroy_bitmap(sub_frame);
+                    }
+                    else{
+                        al_draw_filled_rectangle(e->x - camera_x, e->y, e->x - camera_x + 10, e->y + 10, al_map_rgb(255,0,255));
+                    }
                 }
+                else{
+                    float tela_x = (e->x - camera_x) + e->draw_offset_x;
+                    float tela_y = e->y + e->draw_offset_y;
 
-                al_draw_scaled_bitmap(
-                    e->spritesheet,
-                    frame_to_draw * 32, row * 32,
-                    32, 32,
+                    float dst_w = 32 * scale;
+                    float dst_h = 32 * scale;
 
-                    tela_x, tela_y,
-                    dst_w, dst_h,
-                    0
-                );
+                    if (e->type == ENT_BEE){
+                        dst_w = 16 * scale;
+                        dst_h = 16 * scale;
+                    }
+
+                    al_draw_scaled_bitmap(
+                        e->spritesheet,
+                        frame_to_draw * 32, row * 32,
+                        32, 32,
+
+                        tela_x, tela_y,
+                        dst_w, dst_h,
+                        0
+                    );
+                    al_draw_rectangle(
+                    e->x - camera_x, e->y,
+                    (e->x - camera_x) + e->w, e->y + e->h,
+                    al_map_rgb(255, 0, 0), 2
+                    );
+                }
             }
-
-            al_draw_rectangle(
-                e->x - camera_x, e->y,
-                (e->x - camera_x) + e->w, e->y + e->h,
-                al_map_rgb(255, 0, 0), 2
-            );
         }
     }
 }
@@ -518,7 +568,7 @@ static void entity_reset_all_func(EntitiesManager *self){
                 break;
             case ENT_PENGUIN:
                 e->status = STAT_IDLE;
-                e->v_x = 1.0;
+                e->v_x = 3.0;
                 break;
             case ENT_PANDA:
                 e->status = STAT_WALK;
@@ -527,6 +577,9 @@ static void entity_reset_all_func(EntitiesManager *self){
             case ENT_PIRANHA:
                 e->status = STAT_WALK;
                 e->v_x = 2.0;
+                break;
+            case ENT_VINE:
+                e->v_x = 3.0;
                 break;
             default:
                 e->status = STAT_IDLE;
@@ -568,6 +621,7 @@ EntitiesManager *entity_init(float game_scale){
     em->spritesheets[ENT_PENGUIN] = al_load_bitmap("assets/pinguim.png");
     em->spritesheets[ENT_PIRANHA] = al_load_bitmap("assets/piranha.png");
     em->spritesheets[ENT_PANDA] = al_load_bitmap("assets/panda.png");
+    em->spritesheets[ENT_VINE] = al_load_bitmap("assets/cipo.png");
 
     al_convert_mask_to_alpha(em->spritesheets[ENT_BEE], al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(em->spritesheets[ENT_FLOWER], al_map_rgb(105, 255, 88));
@@ -576,6 +630,7 @@ EntitiesManager *entity_init(float game_scale){
     al_convert_mask_to_alpha(em->spritesheets[ENT_PENGUIN], al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(em->spritesheets[ENT_PIRANHA], al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(em->spritesheets[ENT_PANDA], al_map_rgb(105, 255, 88));
+    al_convert_mask_to_alpha(em->spritesheets[ENT_VINE], al_map_rgb(105, 255, 88));
 
     return em;
 }
