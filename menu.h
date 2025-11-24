@@ -4,18 +4,11 @@
 #include <allegro5/allegro5.h>
 #include <allegro5/allegro_image.h>
 
-enum {
+typedef enum MENU_ACTION{
     MENU_ACTION_NONE,
     MENU_ACTION_PLAY,
     MENU_ACTION_QUIT
-};
-
-typedef enum {
-    STAT_MENU,
-    STAT_PLAYING,
-    STAT_WIN,
-    STAT_LOSE
-} GameState;
+} MENU_ACTION;
 
 #define NUM_MENUS 3
 

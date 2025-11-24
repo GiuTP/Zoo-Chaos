@@ -1,4 +1,4 @@
-#include "menu.h"
+#include "game.h"
 #include <stdio.h>
 
 #define BTN_W 32

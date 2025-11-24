@@ -12,42 +12,6 @@
     } while(0)
 
 // ---------------------------------
-// Motor do jogo
-// ---------------------------------
-struct Game {
-    // ------------ ""Membros"" do jogo ------------
-
-    // Membros básicos
-    ALLEGRO_TIMER *timer;
-    ALLEGRO_EVENT_QUEUE *queue;
-    ALLEGRO_DISPLAY *display;
-    ALLEGRO_FONT *font;
-
-    // Membros de gameplay
-    Player *player;
-    World *world;
-    EntitiesManager *entities;
-    Menu *menu;
-
-    // Membro de música
-    ALLEGRO_AUDIO_STREAM *theme_song;
-
-    // Membros de controle
-    bool running;
-    bool redraw;
-    bool pause;
-    float speed_theme_song;
-    ALLEGRO_EVENT event;
-    ALLEGRO_KEYBOARD_STATE key_state;
-    float camera_x;
-    GAME_STATE current_state;
-
-    // ------------ ""Métodos"" do jogo ------------
-    void(*game_run)(GAME *g);
-    void(*game_destroy)(GAME *g);
-};
-
-// ---------------------------------
 // Implementações 
 // ---------------------------------
 
@@ -78,7 +42,7 @@ static void allegro_init_func(GAME *self){
     INIT_TEST(self->font, "font");
 
     // Iniciação da musica
-    self->theme_song = al_load_audio_stream("assest/pixelland.ogg", 4, 2048);
+    self->theme_song = al_load_audio_stream("assets/pixelland.ogg", 4, 2048);
     INIT_TEST(self->theme_song, "song");
     al_set_audio_stream_playmode(self->theme_song, ALLEGRO_PLAYMODE_LOOP);
 
@@ -125,7 +89,139 @@ static void gameplay_init_func(GAME *self){
 
 // Execução do game loop
 static void game_run_func(GAME *self){
-    
+    al_start_timer(self->timer);
+
+    while(self->running){
+        al_wait_for_event(self->queue, &self->event);
+
+        // Clicou em fechar a janela
+        if(self->event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) self->running = false;
+
+        // Controle dos modos "menu"
+        if(self->current_state == STAT_MENU || self->current_state == STAT_WIN || self->current_state == STAT_LOSE){
+            self->action = self->menu->update(self->menu, &self->event, self->current_state);
+
+            // Ações dos botões "renascer" e "jogar"
+            if(self->action == MENU_ACTION_PLAY){
+                // Se está no modo "win" ou "lose" reinicia tudo quando renasce
+                if(self->current_state == STAT_WIN || self->current_state == STAT_LOSE){
+                    self->player->reset(self->player);
+                    self->entities->reset_all(self->entities);
+                    self->camera_x = 0;
+                }
+
+                // Botão "play" e "renasça" troca estado para "playing"
+                self->current_state = STAT_PLAYING;
+
+                al_rewind_audio_stream(self->theme_song);
+                al_attach_audio_stream_to_mixer(self->theme_song, al_get_default_mixer());
+                al_set_audio_stream_playing(self->theme_song, true);
+            }
+            // Ação do botão "sair"
+            else if(self->action == MENU_ACTION_QUIT)
+                self->running = false;
+            // Desenha o menu
+            if(self->event.type == ALLEGRO_EVENT_TIMER && al_is_event_queue_empty(self->queue)){
+                al_clear_to_color(al_map_rgb(255, 255, 255));
+                self->menu->draw(self->menu, self->current_state);
+                al_flip_display();
+            }
+        }
+        // Controle do modo "playing"
+        else if(self->current_state == STAT_PLAYING){
+            if(self->event.type == ALLEGRO_EVENT_TIMER){
+                // Atualiza se o jogo não estiver pausado
+                if(!self->pause){
+                    al_get_keyboard_state(&self->key_state);
+
+                    // Atualizações das entidades
+                    self->entities->update(self->entities, self->player);
+                    self->player->update(self->player, &self->key_state, self->world, self->entities);
+
+                    // Cálculo da camera para rolling background
+                    float player_center_x = self->player->pos_x + (16 * 5.0 / 2);
+                    self->camera_x = player_center_x - 640;
+                    
+                    // Velocidade da música muda se player está no modo estrela
+                    float current_speed_theme_song = self->player->modo_estrela ? 1.5 : 1.0;
+                    if(self->speed_theme_song != current_speed_theme_song){
+                        al_set_audio_stream_speed(self->theme_song, current_speed_theme_song);
+                        self->speed_theme_song = current_speed_theme_song;
+                    }
+
+                    // Player morreu, reinicia as entitades
+                    if(self->player->vida <= 0){
+                        self->player->reset(self->player);
+                        self->entities->reset_all(self->entities);
+
+                        self->camera_x = 0;
+                    }
+
+                    // Gatilho de fim de fase
+                    float world_witdh = NUM_BG * WIDTH_SCREEN;
+                    if(self->player->pos_x > world_witdh - 100){
+                        self->player->reset(self->player);
+                        self->entities->reset_all(self->entities);
+                        self->camera_x = 0;
+                        al_set_audio_stream_playing(self->theme_song, false);
+
+                        self->current_state = STAT_WIN;
+                    }
+
+                    // Controle do rolling background nos extremos
+                    if(self->camera_x < 0) self->camera_x = 0;
+                    if(self->camera_x > world_witdh - WIDTH_SCREEN) self->camera_x = world_witdh - WIDTH_SCREEN;
+                }
+            self->redraw = true;
+        }
+        else if(self->event.type == ALLEGRO_EVENT_KEY_DOWN){
+            // Sistema de pause
+            if(self->event.keyboard.keycode == ALLEGRO_KEY_ESCAPE){
+                self->pause = !self->pause;
+
+                if(self->pause) al_set_audio_stream_playing(self->theme_song, false);
+                else al_set_audio_stream_playing(self->theme_song, true);
+            }
+            // Sistema para voltar para o menu inicial
+            else if(self->event.keyboard.keycode == ALLEGRO_KEY_Q && self->pause){
+                self->current_state = STAT_MENU;
+                self->pause = false;
+
+                al_set_audio_stream_playing(self->theme_song, false);
+                self->player->reset(self->player);
+                self->entities->reset_all(self->entities);
+                self->camera_x = 0;
+            }
+        }
+        }
+        // Começa a desenha baseados no estado do mundo e das entidades
+        if(self->redraw && al_is_event_queue_empty(self->queue)){
+            al_clear_to_color(al_map_rgb(135, 206, 235));
+
+            self->world->draw(self->world, self->camera_x);
+            self->entities->draw(self->entities, self->camera_x);
+            self->player->draw(self->player, self->camera_x);
+
+            if(self->pause){
+                al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+                al_draw_filled_rectangle(
+                    0, 0, 
+                    WIDTH_SCREEN, HEIGHT_SCREEN, 
+                    al_map_rgba(0, 0, 0, 100)
+                );
+                al_draw_text(
+                    self->font,
+                    al_map_rgb(255, 255, 255),
+                    WIDTH_SCREEN / 2, HEIGHT_SCREEN / 2,
+                    ALLEGRO_ALIGN_CENTER, 
+                    "PAUSE"
+                );
+            }
+
+            al_flip_display();
+            self->redraw = false;
+        }
+    }
 }
 
 // Libera todos os recursos utilizados pelo jogo
@@ -164,6 +260,7 @@ GAME *game_init(void){
 
     g->camera_x = 0;
     g->current_state = STAT_MENU;
+    g->action = MENU_ACTION_NONE;
 
     // Metódos
     g->game_run = game_run_func;
