@@ -1,104 +1,112 @@
 #include "game.h"
 #include <stdio.h>
 
-#define BTN_W 32
-#define BTN_H 32
 
-static int menu_update_func(Menu *self, ALLEGRO_EVENT *ev, int estado_atual){
-    if (ev->type == ALLEGRO_EVENT_KEY_DOWN){
-        switch (ev->keyboard.keycode){
-            case ALLEGRO_KEY_UP:
-            case ALLEGRO_KEY_W:
-                self->select_option--;
-                if (estado_atual == STAT_MENU){
-                    if (self->select_option < 0) self->select_option = 1;
-                }
-                else self->select_option = 0;
-                break;
-            case ALLEGRO_KEY_DOWN:
-            case ALLEGRO_KEY_S:
-                self->select_option++;
-                if (estado_atual == STAT_MENU){
-                    if (self->select_option > 1) self->select_option = 0;
-                }
-                else self->select_option = 0;
-                break;
-            case ALLEGRO_KEY_ENTER:
-                if (estado_atual == STAT_MENU){
-                    if (self->select_option == 0) return MENU_ACTION_PLAY;
-                    if (self->select_option == 1) return MENU_ACTION_QUIT;
-                }
-                else {
-                    return MENU_ACTION_PLAY;
-                }
-                break;
-        }
+// ---------------------------------
+// Implementações
+// ---------------------------------
+
+// Controle dos menus
+static int menu_update_func(Menu *self, ALLEGRO_EVENT *ev, int current_state){
+    if(ev->type != ALLEGRO_EVENT_KEY_DOWN) return MENU_ACTION_NONE;
+
+    // Maximo de opções dependendo do menu
+    int max_option = (current_state == STAT_MENU) ? 1 : 0;
+
+    // Controle das opções do menu de acordo com o teclado
+    switch(ev->keyboard.keycode){
+        // Cima 
+        case ALLEGRO_KEY_UP:
+        case ALLEGRO_KEY_W:
+            self->select_option--;
+            if (self->select_option < 0) self->select_option = max_option;
+            break;
+
+        // Baixo
+        case ALLEGRO_KEY_DOWN:
+        case ALLEGRO_KEY_S:
+            self->select_option++;
+            if (self->select_option > max_option) self->select_option = 0;
+            break;
+
+        // Botão "play" ou "renasça" ou "sair"
+        case ALLEGRO_KEY_ENTER:
+            if(current_state == STAT_MENU) return (self->select_option == 0) ? MENU_ACTION_PLAY : MENU_ACTION_QUIT;
+            else return MENU_ACTION_PLAY;
+            break;
     }
+
+    // Tecla pressionada nao interage com o menu
     return MENU_ACTION_NONE;
 }
 
-static void menu_draw_func(Menu *self, int estado_atual){
+// Desenha os menus
+static void menu_draw_func(Menu *self, int current_state){
     int bg_index = 0;
-    if (estado_atual == STAT_WIN) bg_index = 1;
-    else if (estado_atual == STAT_LOSE) bg_index = 2;
+    if (current_state == STAT_WIN) bg_index = 1;
+    else if (current_state == STAT_LOSE) bg_index = 2;
 
-    if (self->bg[bg_index]){
+    // Desenha o menu baseado no estado atual
+    if (self->menu_bg[bg_index]){
         al_draw_scaled_bitmap(
-            self->bg[bg_index],
-            0, 0, 256, 144,
-            0, 0, 256 * self->scale, 144 * self->scale,
+            self->menu_bg[bg_index],
+            0, 0, 
+            256, 144,
+            0, 0, 
+            256 * self->scale, 144 * self->scale,
             0
         );        
     }
+
+    float btn_scale = self->scale * 1.3;                // encolhe um pouco os botões
+    float x_jogar_sair_renasca = 180 * self->scale;     // posicao x dos botões
+    float dst_w = BTN_W * btn_scale;
+    float dst_h = BTN_H * btn_scale;
     
-    if (self->spritesheet_btn){
-        if (estado_atual == STAT_MENU){
-            float btn_scale = self->scale * 1.5;
-            float btn_x = 180 * self->scale;
+    // Desenha os botões dos menus
+    if (self->spritesheet_btns){
+        // Desenha os botões do menu principal
+        if (current_state == STAT_MENU){
 
-            float dst_w = BTN_W * btn_scale;
-            float dst_h = BTN_H * btn_scale;
-
+            // y dos botões jogar e sair
             float y_jogar = 20 * self->scale;
             float y_sair = 40 * self->scale;
 
+            // Coluna do botão (selecionado ou nao)
             int col_jogar = (self->select_option == 0) ? 1 : 0;
+            int col_sair = (self->select_option == 1) ? 1 : 0;
 
             al_draw_scaled_bitmap(
-                self->spritesheet_btn,
+                self->spritesheet_btns,
                 col_jogar * BTN_W, 0,
                 BTN_W, BTN_H,
-                btn_x - ((BTN_W * self->scale)/ 2), y_jogar,
+                x_jogar_sair_renasca - (dst_w/ 2), y_jogar,
                 dst_w, dst_h,
                 0
             );
-
-            int col_sair = (self->select_option == 1) ? 1 : 0;
+            
             al_draw_scaled_bitmap(
-                self->spritesheet_btn,
+                self->spritesheet_btns,
                 col_sair * BTN_W, BTN_H,
                 BTN_W, BTN_H,
-                btn_x - ((BTN_W * self->scale)/ 2), y_sair,
+                x_jogar_sair_renasca - (dst_w/ 2), y_sair,
                 dst_w, dst_h,
                 0
             );
         }
+        // Desenha o botão de game over e win
         else {
-            float btn_scale = self->scale * 1.5;
-            float btn_x = 180 * self->scale;
-
-            float dst_w = BTN_W * btn_scale;
-            float dst_h = BTN_H * btn_scale;
-
+            // y do botão renascer
             float y_renascer = 80 * self->scale;
 
-            int col_renaser = (self->select_option == 0) ? 1 : 0;
+            // Efeito de piscar do botão
+            float col_renascer = (int)(al_get_time() * 4.0) % 2;
 
             al_draw_scaled_bitmap(
-                self->spritesheet_btn,
-                col_renaser * BTN_W, 2 * BTN_H,
+                self->spritesheet_btns,
+                col_renascer * BTN_W, 2 * BTN_H,
                 BTN_W, BTN_H,
-                btn_x - ((BTN_W * self->scale)/ 2), y_renascer,
+                x_jogar_sair_renasca - (dst_w/ 2), y_renascer,
                 dst_w, dst_h,
                 0
             );
@@ -106,12 +114,16 @@ static void menu_draw_func(Menu *self, int estado_atual){
     }
 }
 
+// Destroi o menu
 static void menu_destroy_func(Menu *self){
-    // if (self->bg) al_destroy_bitmap(self->bg);
-    if (self->spritesheet_btn) al_destroy_bitmap(self->spritesheet_btn);
+    for(int i = 0; i < NUM_MENUS; i++){
+        if (self->menu_bg[i]) al_destroy_bitmap(self->menu_bg[i]);
+    }
+    if (self->spritesheet_btns) al_destroy_bitmap(self->spritesheet_btns);
     free(self);
 }
 
+// Inicializa o menu
 Menu *menu_init(float scale){
     Menu *m;
     if (!(m = malloc(sizeof(Menu)))) return NULL;
@@ -119,13 +131,13 @@ Menu *menu_init(float scale){
     m->scale = scale;
     m->select_option = 0;
 
-    m->bg[0] = al_load_bitmap("assets/cover.png");
-    m->bg[1] = al_load_bitmap("assets/venceu.png");
-    m->bg[2] = al_load_bitmap("assets/morreu.png");
+    m->menu_bg[0] = al_load_bitmap("assets/cover.png");
+    m->menu_bg[1] = al_load_bitmap("assets/venceu.png");
+    m->menu_bg[2] = al_load_bitmap("assets/morreu.png");
 
-    m->spritesheet_btn = al_load_bitmap("assets/opcoes.png");
+    m->spritesheet_btns = al_load_bitmap("assets/opcoes.png");
 
-    al_convert_mask_to_alpha(m->spritesheet_btn, al_map_rgb(105, 255, 88));
+    al_convert_mask_to_alpha(m->spritesheet_btns, al_map_rgb(105, 255, 88));
 
     m->update = menu_update_func;
     m->draw = menu_draw_func;

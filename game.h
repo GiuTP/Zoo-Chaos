@@ -19,16 +19,6 @@
 #define SCALE 5.0f          // Escala do jogo
 
 // ---------------------------------
-// Enums
-// ---------------------------------
-typedef enum {
-    STAT_MENU,
-    STAT_PLAYING,
-    STAT_WIN,
-    STAT_LOSE
-} GAME_STATE;
-
-// ---------------------------------
 // Motor do jogo
 // ---------------------------------
 typedef struct Game GAME;

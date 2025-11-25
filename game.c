@@ -182,8 +182,8 @@ static void game_run_func(GAME *self){
                     if(self->player->vida <= 0){
                         self->player->reset(self->player);
                         self->entities->reset_all(self->entities);
-
                         self->camera_x = 0;
+                        al_set_audio_stream_playing(self->theme_song, false);
 
                         self->current_state = STAT_LOSE;
                     }
