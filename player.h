@@ -3,8 +3,8 @@
 
 #include <allegro5/allegro5.h>
 #include <allegro5/keyboard.h>
-#include "world.h"
-#include "entity.h"
+
+#include "engine.h"
 
 // Constantes do player
 #define PLAYER_WIDTH_FRAME 32
@@ -14,6 +14,8 @@
 #define HEART_SIZE 32
 
 typedef struct player Player;
+typedef struct world WORLD;
+typedef struct entities_manager EntitiesManager;
 struct player{
     // ------- Variáveis do player (""Membros"") -------
 
@@ -47,7 +49,7 @@ struct player{
 
 
     // ------- ""Metodos"" do player -------
-    void (*update)(Player *self, ALLEGRO_KEYBOARD_STATE *ks, World *world, EntitiesManager *em); // Atualiza o player
+    void (*update)(Player *self, ALLEGRO_KEYBOARD_STATE *ks, WORLD *world, EntitiesManager *em); // Atualiza o player
     void (*draw)(Player *self, float camera_x);                               // Desenha o player
     void (*take_damage)(Player *self);                        // Tomar dano
     void (*destroy)(Player *self);                            // ""Destrutor"" o player

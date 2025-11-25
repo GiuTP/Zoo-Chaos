@@ -644,15 +644,15 @@ EntitiesManager *entity_init(float game_scale){
     for (int i = 0; i < NUM_ENTITIES_SPRITESHEET; i++)
         em->spritesheets[i] = NULL;
 
-    em->spritesheets[ENT_BEE] = al_load_bitmap("assets/abelha.png");
-    em->spritesheets[ENT_FLOWER] = al_load_bitmap("assets/flor.png");
-    em->spritesheets[ENT_SHARK] = al_load_bitmap("assets/tutu.png");
-    em->spritesheets[ENT_BIRD] = al_load_bitmap("assets/gralha_azul.png");
-    em->spritesheets[ENT_PENGUIN] = al_load_bitmap("assets/pinguim.png");
-    em->spritesheets[ENT_PIRANHA] = al_load_bitmap("assets/piranha.png");
-    em->spritesheets[ENT_PANDA] = al_load_bitmap("assets/panda.png");
-    em->spritesheets[ENT_VINE] = al_load_bitmap("assets/cipo.png");
-    em->spritesheets[ENT_COIN] = al_load_bitmap("assets/moeda.png");
+    em->spritesheets[ENT_BEE] = al_load_bitmap("assets/entidades/abelha.png");
+    em->spritesheets[ENT_FLOWER] = al_load_bitmap("assets/entidades/flor.png");
+    em->spritesheets[ENT_SHARK] = al_load_bitmap("assets/entidades/tutu.png");
+    em->spritesheets[ENT_BIRD] = al_load_bitmap("assets/entidades/gralha_azul.png");
+    em->spritesheets[ENT_PENGUIN] = al_load_bitmap("assets/entidades/pinguim.png");
+    em->spritesheets[ENT_PIRANHA] = al_load_bitmap("assets/entidades/piranha.png");
+    em->spritesheets[ENT_PANDA] = al_load_bitmap("assets/entidades/panda.png");
+    em->spritesheets[ENT_VINE] = al_load_bitmap("assets/entidades/cipo.png");
+    em->spritesheets[ENT_COIN] = al_load_bitmap("assets/entidades/moeda.png");
 
     al_convert_mask_to_alpha(em->spritesheets[ENT_BEE], al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(em->spritesheets[ENT_FLOWER], al_map_rgb(105, 255, 88));

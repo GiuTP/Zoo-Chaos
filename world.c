@@ -1,25 +1,34 @@
-#include "world.h"
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
+#include "world.h"
+
+// Hookup table de tiles
 typedef struct {
     float src_x, src_y;
     float src_w, src_h;
     float dst_w, dst_h;
     float offset_x;
-} TileConfig;
+} TILE_CONFIG;
+static TILE_CONFIG TILE_CONFIGS[NUM_WORLD_SPRITESHEET];
 
-static TileConfig TILE_CONFIGS[NUM_WORLD_SPRITESHEET];
+// ---------------------------------
+// Implementacoes
+// ---------------------------------
 
-static void setup_tile_configs(float escala){
-    TileConfig padrao = {
+// Configuracoes de tiles
+static void setup_tile_configs(float scale){
+    // Configuracoes padrao
+    TILE_CONFIG padrao = {
         .src_y = 0,
         .src_x = 0,
 
         .src_w = 32,
         .src_h = 32,
 
-        .dst_w = 32 * escala,
-        .dst_h = 32 * escala,
+        .dst_w = 32 * scale,
+        .dst_h = 32 * scale,
 
         .offset_x = 0
     };
@@ -28,67 +37,218 @@ static void setup_tile_configs(float escala){
     TILE_CONFIGS[PLAT_TYPE_ICE_FLOOR] = padrao;
     TILE_CONFIGS[PLAT_TYPE_BAMBOO] = padrao;
 
-    TILE_CONFIGS[PLAT_TYPE_ONE_WAY] = (TileConfig){
+    // Configuracoes especificas
+    TILE_CONFIGS[PLAT_TYPE_ONE_WAY] = (TILE_CONFIG){
         .src_x = 7,
         .src_y = 12,
 
         .src_w = 18,
         .src_h = 6,
 
-        .dst_w = 18 * escala,
-        .dst_h = 6 * escala,
+        .dst_w = 18 * scale,
+        .dst_h = 6 * scale,
 
-        .offset_x = -3 * escala
+        .offset_x = -3 * scale
     };
 
-    TILE_CONFIGS[PLAT_TYPE_ICE_BLOCK] = (TileConfig){
+    TILE_CONFIGS[PLAT_TYPE_ICE_BLOCK] = (TILE_CONFIG){
         .src_x = 9,
         .src_y = 11,
 
         .src_w = 14,
         .src_h = 10,
 
-        .dst_w = 14 * escala,
-        .dst_h = 10 * escala,
+        .dst_w = 14 * scale,
+        .dst_h = 10 * scale,
 
-        .offset_x = -2.5 * escala
+        .offset_x = -2.5 * scale
     };
 
-    TILE_CONFIGS[PLAT_TYPE_TANK] = (TileConfig){
+    TILE_CONFIGS[PLAT_TYPE_TANK] = (TILE_CONFIG){
         .src_x = 0,
         .src_y = 13,
 
         .src_w = 32,
         .src_h = 19,
 
-        .dst_w = 32 * escala,
-        .dst_h = 19 * escala,
+        .dst_w = 32 * scale,
+        .dst_h = 19 * scale,
 
         .offset_x = 0
     };
 
-    TILE_CONFIGS[PLAT_TYPE_WAVE] = (TileConfig){
+    TILE_CONFIGS[PLAT_TYPE_WAVE] = (TILE_CONFIG){
         .src_x = 0,
         .src_y = 13,
 
         .src_w = 32,
         .src_h = 3,
 
-        .dst_w = 32 * escala,
-        .dst_h = 6 * escala,
+        .dst_w = 32 * scale,
+        .dst_h = 6 * scale,
 
         .offset_x = 0
     };
 }
 
-static void world_destroy_func(World *self)
-{
+// Retorna a altura da plataforma baseado no tipo
+static float get_height_func(const PLATAFORM *p, TILE_CONFIG cfg){
+    switch(p->type){
+        case PLAT_TYPE_BLOCK:
+        case PLAT_TYPE_ICE_FLOOR:
+        case PLAT_TYPE_BAMBOO:
+            return p->h;
+            break;
+
+        default:
+            return cfg.dst_h;
+    }
+}
+
+// Retorna o frame atual da onda
+static int get_frame_wave_func(){
+    // speed = 8 e num_frames = 3
+    return ((int)(al_get_time() * 8.0f)) % 3;
+}
+
+// Desenha tiles ate a largura passada
+static void draw_tile_func(ALLEGRO_BITMAP *bmp, TILE_CONFIG cfg,
+                           float x, float y, float w, float h, int frame){
+    float src_x = cfg.src_x + frame * cfg.src_w;
+
+    if(cfg.dst_w <= 0) return;
+
+    while(w > 0.5f){
+        float dst_w = (w < cfg.dst_w) ? w : cfg.dst_w;
+        float src_w = (dst_w / cfg.dst_w) * cfg.src_w;
+
+        al_draw_scaled_bitmap(
+            bmp, 
+            src_x, cfg.src_y, 
+            src_w, cfg.src_h,
+            x + cfg.offset_x, y,
+            dst_w, h,
+            0
+        );
+
+        x += dst_w;
+        w -= dst_w;
+    }
+}
+
+// Desenha o background e as plataformas
+static void world_draw_func(WORLD *self, float camera_x){
+    float bg_width_screen = WIDTH_WORLD * self->scale;      // largura do background escalado
+    int start_index = (int)(camera_x / bg_width_screen);    // background atual baseado na camera
+
+    // Carrega os 2 backgrounds mais proximos na tela
+    for (int i = 0; i < 2; i++){
+        int idx = start_index + i;
+
+        // Nao desenha backgrounds que nao existem
+        if (idx < NUM_BG && self->bg_img[idx]){
+            float pos_x = idx * bg_width_screen - camera_x;
+
+            al_draw_scaled_bitmap(
+                self->bg_img[idx],
+                0, 0, 256, 144,
+                pos_x, 0,
+                bg_width_screen, 144 * self->scale,
+                0
+            );
+        }
+    }
+    
+    float screen_x = WIDTH_WORLD * self->scale;
+
+    // Desenha as plataformas
+    for (int i = 0; i < self->num_plataforms; i++){
+        PLATAFORM p = self->plataforms[i];
+        TILE_CONFIG cfg = TILE_CONFIGS[p.type];
+        ALLEGRO_BITMAP *current_sprite = self->tileset[p.type];
+
+        // Nao desenha plataformas totalmente fora da tela (pequena otimizacao)
+        if(p.x + p.w >= camera_x && p.x <= camera_x + screen_x){
+            if(current_sprite){
+                float x = p.x - camera_x;
+                float y = p.y;
+
+                // Desenha plataformas "nao chao" -- possuem largura menor
+                if(p.type == PLAT_TYPE_ONE_WAY || p.type == PLAT_TYPE_ICE_BLOCK ||
+                    p.type == PLAT_TYPE_TANK){
+                    float central_offset_x = (p.w - cfg.dst_w) * 0.5f;
+
+                    al_draw_scaled_bitmap(
+                        current_sprite,
+                        cfg.src_x, cfg.src_y, 
+                        cfg.src_w, cfg.src_h,
+                        x + central_offset_x, y,
+                        cfg.dst_w, cfg.dst_h,
+                        0
+                    );
+                }
+                // Desenha plataformas "chao" e ondas
+                else{
+                    // Frame da onda para animacao
+                    int frame = (p.type == PLAT_TYPE_WAVE) ? get_frame_wave_func() : 0;
+
+                    // Altura da plataforma
+                    float h = get_height_func(&p, cfg);
+
+                    // Desenha a plataforma em tiles
+                    draw_tile_func(current_sprite, cfg, x, y, p.w, h, frame);
+                }
+            }
+        }
+    }
+
+    // DEBUG
+    ALLEGRO_COLOR debug_color;
+    for (int i = 0; i < self->num_plataforms; i++){
+        PLATAFORM p = self->plataforms[i];
+
+        if(p.x + p.w >= camera_x && p.x <= camera_x + screen_x){
+            switch(p.type){
+                case PLAT_TYPE_BLOCK:
+                case PLAT_TYPE_BLOCK_BG:
+                case PLAT_TYPE_ICE_BLOCK:
+                case PLAT_TYPE_ICE_FLOOR:
+                case PLAT_TYPE_BAMBOO:
+                    debug_color = al_map_rgb(255, 0, 0);
+                    break;
+            
+                case PLAT_TYPE_ONE_WAY:
+                case PLAT_TYPE_ONE_WAY_BG:
+                    debug_color = al_map_rgb(0, 255, 0);
+                    break;
+            
+                default:
+                    debug_color = al_map_rgb(0, 0, 255);
+                    break;
+            }
+
+            float x = p.x - camera_x;
+            float y = p.y;
+            
+            al_draw_rectangle(
+                x, y,
+                x + p.w, y + p.h,
+                debug_color, 2
+            );
+        }
+    }
+}
+
+// Destroi o mundo
+static void world_destroy_func(WORLD *self){
+    // Bitmaps de background
     for (int i = 0; i < NUM_BG; i++){
         if (self->bg_img[i]){
             al_destroy_bitmap(self->bg_img[i]);
         }
     }
 
+    // Bitmaps de plataformas
     for (int i = 0; i < NUM_WORLD_SPRITESHEET; i++){
         if (self->tileset[i]){
             al_destroy_bitmap(self->tileset[i]);
@@ -96,368 +256,131 @@ static void world_destroy_func(World *self)
     }
 
     free(self->plataforms);
+    self->plataforms = NULL;
+    self->num_plataforms = 0;
+    
     free(self);
 }
 
-static void world_draw_func(World *self, float camera_x){
-    if (camera_x < 0) camera_x = 0;
-    
-    float bg_width_tela = 256 * self->escala;
-    int index_inicial = (int)(camera_x / bg_width_tela);
-
-    for (int i = 0; i < 2; i++){
-        int idx = index_inicial + i;
-
-        if (idx < NUM_BG){
-            float pos_x = (idx * bg_width_tela) - camera_x;
-
-            al_draw_scaled_bitmap(
-                self->bg_img[idx],
-                0, 0, 256, 144,
-                pos_x, 0,
-                bg_width_tela, 144 * self->escala,
-                0
-            );
-        }
-    }
-
-    for (int i = 0; i < self->num_plataforms; i++){
-        Plataform p = self->plataforms[i];
-
-        TileConfig cfg = TILE_CONFIGS[p.type];
-        ALLEGRO_BITMAP *sprite_atual = self->tileset[p.type];
-
-        if (sprite_atual != NULL){
-            float tela_x = p.x - camera_x;
-            float tela_y = p.y;
-
-            if (p.type == PLAT_TYPE_ONE_WAY || p.type == PLAT_TYPE_ICE_BLOCK ||
-                p.type == PLAT_TYPE_TANK){
-                float centro_offset = (p.w - cfg.dst_w) / 2.0;
-
-                al_draw_scaled_bitmap(
-                    sprite_atual,
-                    cfg.src_x, cfg.src_y, 
-                    cfg.src_w, cfg.src_h,
-
-                    tela_x + centro_offset,
-                    tela_y,
-
-                    cfg.dst_w, cfg.dst_h,
-                    0
-                );
-            }
-            else {
-                float altura_desenho = cfg.dst_h;
-                if (p.type == PLAT_TYPE_BLOCK || p.type == PLAT_TYPE_ICE_FLOOR || 
-                    p.type == PLAT_TYPE_ICE_FLOOR || p.type == PLAT_TYPE_BAMBOO){
-                    altura_desenho = p.h;
-                }
-
-                float src_x_final = cfg.src_x;
-                if (p.type == PLAT_TYPE_WAVE){
-                    int num_frames = 3;
-                    float velocidade = 8.0;
-                    int frame = (int)(al_get_time() * velocidade) % num_frames;
-
-                    src_x_final = cfg.src_x + (cfg.src_w * frame);
-                }
-
-                float x_atual = tela_x;
-                float largura_restante = p.w;
-                while (largura_restante > 0.5){
-                    float dst_w_desenhar = cfg.dst_w;
-                    float src_w_recorrer = cfg.src_w;
-
-                    if (largura_restante < cfg.dst_w){
-                        dst_w_desenhar = largura_restante;
-                        src_w_recorrer = (largura_restante / cfg.dst_w) * cfg.src_w;
-                    }
-
-                    al_draw_scaled_bitmap(
-                        sprite_atual,
-                        src_x_final, cfg.src_y, 
-                        src_w_recorrer, cfg.src_h,
-
-                        x_atual + cfg.offset_x,
-                        tela_y,
-
-                        dst_w_desenhar, altura_desenho,
-                        0
-                    );
-
-                    x_atual += dst_w_desenhar;
-                    largura_restante -= dst_w_desenhar;
-                }
-            }
-        }
-    }
-
-    // ------ DEBUG --------
-    ALLEGRO_COLOR cor_debug;
-    for (int i = 0; i < self->num_plataforms; i++){
-        Plataform p = self->plataforms[i];
-
-        float tela_x = p.x - camera_x;
-        float tela_y = p.y;
-
-        if (p.type == PLAT_TYPE_BLOCK || p.type == PLAT_TYPE_BLOCK_BG || p.type == PLAT_TYPE_ICE_BLOCK || p.type == PLAT_TYPE_ICE_FLOOR || p.type == PLAT_TYPE_BAMBOO)
-            cor_debug = al_map_rgb(255, 0, 0);
-        else if (p.type == PLAT_TYPE_ONE_WAY || p.type == PLAT_TYPE_ONE_WAY_BG)
-            cor_debug = al_map_rgb(0, 255, 0);
-        else
-            cor_debug = al_map_rgb(0, 0, 255);
-        
-        al_draw_rectangle(
-            tela_x, tela_y,
-            tela_x + p.w, tela_y + p.h,
-            cor_debug, 2
-        );
-    }
+// Inicia o array de plataformas
+static void init_plataform_array_func(WORLD *w, int init_cap){
+    w->cap_plataforms = init_cap;
+    w->plataforms = malloc(w->cap_plataforms * sizeof(PLATAFORM));
 }
 
-static void add_plataform(World *w, float x, float y, float width, float height, int type){
+// Dobra a capacidade do array se for necessario
+static void ensure_plataform_capacity_func(WORLD *w){
+    if(w->num_plataforms < w->cap_plataforms) return;
+
+    w->cap_plataforms *= 2;
+    PLATAFORM *tmp = realloc(w->plataforms, w->cap_plataforms * sizeof(PLATAFORM));
+    if(!tmp){
+        fprintf(stderr, "Erro ao realocar o array de plataformas\n");
+        exit(1);
+    }
+    w->plataforms = tmp;
+}
+
+// Adiciona uma nova plataforma ao mundo
+static void add_plataform(WORLD *w, float x, float y, float width, float height, int type){
+    ensure_plataform_capacity_func(w);
     w->num_plataforms++;
 
-    w->plataforms = realloc(w->plataforms, w->num_plataforms * sizeof(Plataform));
-
-    w->plataforms[w->num_plataforms - 1] = (Plataform){
+    w->plataforms[w->num_plataforms-1] = (PLATAFORM){
         .x = x,
         .y = y,
         .w = width,
         .h = height,
-        .type = type};
+        .type = type
+    };
 }
 
-World *world_init(void)
-{
-    World *w;
-    if (!(w = malloc(sizeof(World))))
-        return NULL;
+// Conversão de string para PLATAFORM_TYPE
+static PLATAFORM_TYPE string_to_plataform_type_func(const char *str){
+    if(strcmp(str, "PLAT_TYPE_BLOCK") == 0)     return PLAT_TYPE_BLOCK;
+    if(strcmp(str, "PLAT_TYPE_ICE_BLOCK") == 0) return PLAT_TYPE_ICE_BLOCK;
+    if(strcmp(str, "PLAT_TYPE_ICE_FLOOR") == 0) return PLAT_TYPE_ICE_FLOOR;
+    if(strcmp(str, "PLAT_TYPE_BAMBOO") == 0)    return PLAT_TYPE_BAMBOO;
+    if(strcmp(str, "PLAT_TYPE_ONE_WAY") == 0)   return PLAT_TYPE_ONE_WAY;
+    if(strcmp(str, "PLAT_TYPE_DANGER") == 0)    return PLAT_TYPE_DANGER;
+    if(strcmp(str, "PLAT_TYPE_TANK") == 0)      return PLAT_TYPE_TANK;
+    if(strcmp(str, "PLAT_TYPE_WAVE") == 0)      return PLAT_TYPE_WAVE;
+    if(strcmp(str, "PLAT_TYPE_BLOCK_BG") == 0)  return PLAT_TYPE_BLOCK_BG;
+    if(strcmp(str, "PLAT_TYPE_ONE_WAY_BG") == 0)return PLAT_TYPE_ONE_WAY_BG;
+
+    return -1;
+}
+
+// Carrega as plataformas de um arquivo
+static void load_plataforms_from_file_func(WORLD *w, const char *filename){
+    FILE *arc = fopen(filename, "r");
+    if(!arc) {
+        fprintf(stderr, "Arquivo %s nao encontrado. Sem plataformas.\n", filename);
+        return;
+    }
+
+    char type_str[50];
+    float x, y, width, height;
+    while(fscanf(arc, "%49s %f %f %f %f", type_str, &x, &y, &width, &height) == 5){
+        int type = string_to_plataform_type_func(type_str);
+
+        if(type != -1) add_plataform(w, x * w->scale, y * w->scale, width * w->scale, height, type);
+        else printf("Invalid plataform type: %s\n", type_str);
+    }
+
+    fclose(arc);
+}
+
+// Inicializa o mundo
+WORLD *world_init(void){
+    WORLD *w;
+    if (!(w = malloc(sizeof(WORLD)))) return NULL;
 
     // Variaveis basicas
-    *w = (World){
-        .escala = 5.0,
+    *w = (WORLD){
+        .scale = 5.0,
         .plataforms = NULL,
         .num_plataforms = 0,
+
+        .cap_plataforms = 0,
 
         .draw = world_draw_func,
         .destroy = world_destroy_func
     };
 
-    setup_tile_configs(w->escala);
+    // Hookup table
+    setup_tile_configs(w->scale);
 
-    // Cenarios
+    // Sprites de background
     char path[50];
-    for (int i = 0; i < NUM_BG; i++)
-    {
-        sprintf(path, "assets/bg%d.png", i);
+    for (int i = 0; i < NUM_BG; i++){
+        sprintf(path, "assets/backgrounds/bg%d.png", i);
         w->bg_img[i] = al_load_bitmap(path);
 
-        if (!w->bg_img[i])
-        {
-            fprintf(stderr, "Nao foi possivel carregar o background %d\n", i);
+        if (!w->bg_img[i]){
             free(w);
             return NULL;
         }
     }
 
+    // Sprites de plataformas
     for (int i = 0; i < NUM_WORLD_SPRITESHEET; i++) w->tileset[i] = NULL;
-
-    w->tileset[PLAT_TYPE_BLOCK] = al_load_bitmap("assets/chao.png");
-    w->tileset[PLAT_TYPE_ONE_WAY] = al_load_bitmap("assets/plataforma.png");
-    w->tileset[PLAT_TYPE_ICE_BLOCK] = al_load_bitmap("assets/bloco_gelo.png");
-    w->tileset[PLAT_TYPE_ICE_FLOOR] = al_load_bitmap("assets/chao_gelo.png");
-    w->tileset[PLAT_TYPE_BAMBOO] = al_load_bitmap("assets/chao_bambu.png");
-    w->tileset[PLAT_TYPE_TANK] = al_load_bitmap("assets/tanque.png");
-    w->tileset[PLAT_TYPE_WAVE] = al_load_bitmap("assets/ondas.png");
+    w->tileset[PLAT_TYPE_BLOCK]     = al_load_bitmap("assets/plataformas/chao.png");
+    w->tileset[PLAT_TYPE_ONE_WAY]   = al_load_bitmap("assets/plataformas/plataforma.png");
+    w->tileset[PLAT_TYPE_ICE_BLOCK] = al_load_bitmap("assets/plataformas/bloco_gelo.png");
+    w->tileset[PLAT_TYPE_ICE_FLOOR] = al_load_bitmap("assets/plataformas/chao_gelo.png");
+    w->tileset[PLAT_TYPE_BAMBOO]    = al_load_bitmap("assets/plataformas/chao_bambu.png");
+    w->tileset[PLAT_TYPE_TANK]      = al_load_bitmap("assets/plataformas/tanque.png");
+    w->tileset[PLAT_TYPE_WAVE]      = al_load_bitmap("assets/plataformas/ondas.png");
 
     al_convert_mask_to_alpha(w->tileset[PLAT_TYPE_ONE_WAY], al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(w->tileset[PLAT_TYPE_ICE_BLOCK], al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(w->tileset[PLAT_TYPE_TANK], al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(w->tileset[PLAT_TYPE_WAVE], al_map_rgb(105, 255, 88));
 
-    // Plataformas
-    float escala = 5.0;
-    float width_plataform = 256 * escala;
-    float offset_x = 0;
+    // Coloca as plataformas no mundo
+    init_plataform_array_func(w, 64);
+    load_plataforms_from_file_func(w, "assets/maps/plataform_map.txt");
 
-    // Bg0: Placa e Banheiro
-    add_plataform(w, offset_x, 106 * escala, // Chao
-                    width_plataform, 200, 
-                    PLAT_TYPE_BLOCK);   
-    add_plataform(w, 59 * escala, 73 * escala, // Placa
-                    16 * escala, 5, 
-                    PLAT_TYPE_ONE_WAY_BG);
-    add_plataform(w, 99 * escala, 50 * escala, // Telhado
-                    109 * escala, 4, 
-                    PLAT_TYPE_ONE_WAY_BG);     
-
-    offset_x += width_plataform;    
-    // Bg1: Abelhas
-    add_plataform(w, offset_x, 106 * escala, // Chao
-                    width_plataform, 200, 
-                    PLAT_TYPE_BLOCK);
-    add_plataform(w, offset_x + (13 * escala), 80 * escala, // Plataforma
-                    10 * escala, 6, 
-                    PLAT_TYPE_ONE_WAY_BG);
-    add_plataform(w, offset_x + (61 * escala), 65 * escala, // Plataforma
-                    10 * escala, 9, 
-                    PLAT_TYPE_ONE_WAY_BG);
-    add_plataform(w, offset_x + (91 * escala), 56 * escala, // Plataforma
-                    12 * escala, 7,
-                    PLAT_TYPE_ONE_WAY);
-    add_plataform(w, offset_x + (139 * escala), 65 * escala,// Plataforma
-                    12 * escala, 7,
-                    PLAT_TYPE_ONE_WAY);
-    add_plataform(w, offset_x + (180 * escala), 80 * escala,// Plataforma
-                    8 * escala, 7,
-                    PLAT_TYPE_ONE_WAY_BG);
-    
-    offset_x += width_plataform;
-    //Bg2: Tuburao
-    add_plataform(w, offset_x + (0 * escala), 106 * escala,    // Chao
-                    69 * escala, 200,
-                    PLAT_TYPE_BLOCK);
-                    
-    add_plataform(w, offset_x + (69 * escala), 106 * escala,    // Chao
-                    32 * escala, 19 * escala,
-                    PLAT_TYPE_TANK);                
-    add_plataform(w, offset_x + (79 * escala), 80 * escala,
-                    12 * escala, 7,
-                    PLAT_TYPE_ONE_WAY);
-    add_plataform(w, offset_x + (71 * escala), 108 * escala,    // Chao
-                    28 * escala, 3 * escala,
-                    PLAT_TYPE_WAVE);
-    add_plataform(w, offset_x + (71 * escala), 108 * escala,    // Chao
-                    28 * escala, 15 * escala,
-                    PLAT_TYPE_DANGER);
-    add_plataform(w, offset_x + (69 * escala), 125 * escala,    // Chao
-                    32 * escala, 200,
-                    PLAT_TYPE_BAMBOO);
-
-    add_plataform(w, offset_x + (101 * escala), 106 * escala,    // Chao
-                    4 * escala, 200,
-                    PLAT_TYPE_BLOCK);
-
-    add_plataform(w, offset_x + (105 * escala), 106 * escala,    // Chao
-                    32 * escala, 19 * escala,
-                    PLAT_TYPE_TANK);
-    add_plataform(w, offset_x + (116 * escala), 80 * escala,
-                    12 * escala, 7,
-                    PLAT_TYPE_ONE_WAY);
-    add_plataform(w, offset_x + (107 * escala), 108 * escala,    // Chao
-                    28 * escala, 3 * escala,
-                    PLAT_TYPE_WAVE);               
-    add_plataform(w, offset_x + (107 * escala), 108 * escala,    // Chao
-                    28 * escala, 15 * escala,
-                    PLAT_TYPE_DANGER);
-    add_plataform(w, offset_x + (105 * escala), 125 * escala,    // Chao
-                    32 * escala, 200,
-                    PLAT_TYPE_BAMBOO);
-
-    add_plataform(w, offset_x + (137 * escala), 106 * escala,    // Chao
-                    4 * escala, 200,
-                    PLAT_TYPE_BLOCK);
-    
-    add_plataform(w, offset_x + (141 * escala), 106 * escala,    // Chao
-                    32 * escala, 19 * escala,
-                    PLAT_TYPE_TANK);
-    add_plataform(w, offset_x + (152 * escala), 80 * escala,
-                    12 * escala, 7,
-                    PLAT_TYPE_ONE_WAY);
-    add_plataform(w, offset_x + (143 * escala), 108 * escala,    // Chao
-                    28 * escala, 3 * escala,
-                    PLAT_TYPE_WAVE);
-    add_plataform(w, offset_x + (143 * escala), 108 * escala,    // Chao
-                    28 * escala, 15 * escala,
-                    PLAT_TYPE_DANGER);
-    add_plataform(w, offset_x + (141 * escala), 125 * escala,    // Chao
-                    32 * escala, 200,
-                    PLAT_TYPE_BAMBOO);
-
-    add_plataform(w, offset_x + (173 * escala), 106 * escala,    // Chao
-                    4 * escala, 200,
-                    PLAT_TYPE_BLOCK);
-
-    add_plataform(w, offset_x + (177 * escala), 106 * escala,    // Chao
-                    32 * escala, 19 * escala,
-                    PLAT_TYPE_TANK);
-    add_plataform(w, offset_x + (188 * escala), 80 * escala,
-                    12 * escala, 7,
-                    PLAT_TYPE_ONE_WAY);
-    add_plataform(w, offset_x + (179 * escala), 108 * escala,    // Chao
-                    28 * escala, 3 * escala,
-                    PLAT_TYPE_WAVE);
-    add_plataform(w, offset_x + (179 * escala), 108 * escala,    // Chao
-                    28 * escala, 15 * escala,
-                    PLAT_TYPE_DANGER);
-    add_plataform(w, offset_x + (177 * escala), 125 * escala,    // Chao
-                    32 * escala, 200,
-                    PLAT_TYPE_BAMBOO);
-
-    add_plataform(w, offset_x + (209 * escala), 106 * escala,    // Chao
-                    47 * escala, 200,
-                    PLAT_TYPE_BLOCK);
-
-    offset_x += width_plataform;
-    //Bg3: Passaro
-    add_plataform(w, offset_x, 106 * escala,
-                    width_plataform, 200,
-                    PLAT_TYPE_BLOCK);
-    add_plataform(w, offset_x + (106 * escala), 64 * escala, 
-                    44 * escala, 5,
-                    PLAT_TYPE_ONE_WAY_BG);
-    add_plataform(w, offset_x + (94 * escala), 80 * escala, 
-                    52 * escala, 2,
-                    PLAT_TYPE_ONE_WAY_BG);
-    add_plataform(w, offset_x + (33 * escala), 84 * escala, 
-                    8 * escala, 4,
-                    PLAT_TYPE_ONE_WAY_BG);
-    add_plataform(w, offset_x + (82 * escala), 61 * escala, 
-                    12 * escala, 4,
-                    PLAT_TYPE_ONE_WAY_BG);
-    
-    offset_x += width_plataform;
-    //Bg4 Pinguin
-    add_plataform(w, offset_x, 106 * escala,
-                    width_plataform, 200,
-                    PLAT_TYPE_ICE_FLOOR);
-    add_plataform(w, offset_x + (14 * escala), 95 * escala, 
-                    9 * escala, 11 * escala,
-                    PLAT_TYPE_ICE_BLOCK);
-    add_plataform(w, offset_x + (233 * escala), 95 * escala, 
-                    9 * escala, 11 * escala,
-                    PLAT_TYPE_ICE_BLOCK);
-
-    offset_x += width_plataform;
-    //Bg5: Piranha
-    add_plataform(w, offset_x, 106 * escala,
-                    16 * escala, 200,
-                    PLAT_TYPE_BLOCK);
-    add_plataform(w, offset_x + (16 * escala), 100 * escala,
-                    4 * escala, 250,
-                    PLAT_TYPE_BLOCK_BG);
-    add_plataform(w, offset_x + (20 * escala), 130 * escala,
-                    216 * escala, 200,
-                    PLAT_TYPE_BAMBOO);
-    add_plataform(w, offset_x + (23 * escala), 108 * escala,    // Chao
-                    211 * escala, 3 * escala,
-                    PLAT_TYPE_WAVE);
-    add_plataform(w, offset_x + (23 * escala), 108 * escala,
-                    211 * escala, 18 * escala,
-                    PLAT_TYPE_DANGER);
-    add_plataform(w, offset_x + (236 * escala), 100 * escala,
-                    4 * escala, 250,
-                    PLAT_TYPE_BLOCK_BG);
-    add_plataform(w, offset_x + (240 * escala), 106 * escala,
-                    16 * escala, 200,
-                    PLAT_TYPE_BLOCK);
-                    
-    offset_x += width_plataform;
-    //Bg6: Panda
-    add_plataform(w, offset_x, 106 * escala,
-                    width_plataform, 200,
-                    PLAT_TYPE_BAMBOO);
     return w;
 }

@@ -46,7 +46,7 @@ static void allegro_init_func(GAME *self){
     INIT_TEST(self->font, "font");
 
     // Iniciação da musica
-    self->theme_song = al_load_audio_stream("assets/pixelland.ogg", 4, 2048);
+    self->theme_song = al_load_audio_stream("assets/soundtrack/pixelland.ogg", 4, 2048);
     INIT_TEST(self->theme_song, "song");
     al_set_audio_stream_playmode(self->theme_song, ALLEGRO_PLAYMODE_LOOP);
 
@@ -86,7 +86,6 @@ static void load_entities_from_file_func(EntitiesManager *e, const char *filenam
 
     char type_str[50];
     float x, y, range;
-
     while(fscanf(arc, "%49s %f %f %f", type_str, &x, &y, &range) == 4){
         int type = string_to_entity_type_func(type_str);
 
@@ -113,7 +112,7 @@ static void gameplay_init_func(GAME *self){
     INIT_TEST(self->menu, "menu");
 
     // Spawn de entidades
-    load_entities_from_file_func(self->entities, "assets/entity_map.txt");
+    load_entities_from_file_func(self->entities, "assets/maps/entity_map.txt");
 }
 
 // Execução do game loop

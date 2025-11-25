@@ -32,7 +32,7 @@ typedef enum {
 // ---------------------------------
 // Motor do menu
 // ---------------------------------
-typedef struct menu Menu;
+typedef struct menu MENU;
 
 struct menu {
     // Membros de bitmap
@@ -44,13 +44,13 @@ struct menu {
     float scale;
 
     // ""Metodos"" do menu
-    int (*update)(Menu *self, ALLEGRO_EVENT *ev, int current_state);
-    void (*draw)(Menu *self, int estado_atual);
-    void (*destroy)(Menu *self);
+    int (*update)(MENU *self, ALLEGRO_EVENT *ev, int current_state);
+    void (*draw)(MENU *self, int estado_atual);
+    void (*destroy)(MENU *self);
 
 };
 
 // """Construtor"" do menu
-Menu *menu_init(float scale);
+MENU *menu_init(float scale);
 
 #endif // __MENU_H__

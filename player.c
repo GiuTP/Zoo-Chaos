@@ -29,7 +29,7 @@ static void player_aplicar_gravidade(Player *p){
     p->vel_y += GRAVITY;
 }
 
-static void player_andar(Player *p, ALLEGRO_KEYBOARD_STATE *key_state, World *w){
+static void player_andar(Player *p, ALLEGRO_KEYBOARD_STATE *key_state, WORLD *w){
     if (p->duck) return;
 
     // Estados iniciais
@@ -64,7 +64,7 @@ static void player_andar(Player *p, ALLEGRO_KEYBOARD_STATE *key_state, World *w)
     float py = p->pos_y + (PLAYER_HITBOX_OFFSET_Y * p->escala);
 
     for (int i = 0; i < w->num_plataforms; i++){
-        Plataform plat = w->plataforms[i];
+        PLATAFORM plat = w->plataforms[i];
 
         bool eh_solido = (plat.type == PLAT_TYPE_BLOCK ||
                           plat.type == PLAT_TYPE_BLOCK_BG ||
@@ -85,7 +85,7 @@ static void player_andar(Player *p, ALLEGRO_KEYBOARD_STATE *key_state, World *w)
     }
 }
 
-static void player_pular(Player *p, ALLEGRO_KEYBOARD_STATE *key_state, World *w){
+static void player_pular(Player *p, ALLEGRO_KEYBOARD_STATE *key_state, WORLD *w){
     // Pula se estiver no chao e nao estiver abaixado
     if (!p->duck && p->on_ground && al_key_down(key_state, ALLEGRO_KEY_J)){
         p->vel_y = JUMP_FORCE;
@@ -104,7 +104,7 @@ static void player_pular(Player *p, ALLEGRO_KEYBOARD_STATE *key_state, World *w)
     float py = p->pos_y + (off_y_visual * p->escala);
 
     for(int i = 0; i < w->num_plataforms; i++){
-        Plataform plat = w->plataforms[i];
+        PLATAFORM plat = w->plataforms[i];
 
         if (check_aabb_collision(px, py, pw, ph, plat.x, plat.y, plat.w, plat.h)){
             bool eh_solido = (plat.type == PLAT_TYPE_BLOCK ||
@@ -293,7 +293,7 @@ static void player_interagir(Player *p, ALLEGRO_KEYBOARD_STATE *ks, EntitiesMana
     }
 }
 
-static void player_update_func(Player *self, ALLEGRO_KEYBOARD_STATE *ks, World *world, EntitiesManager *em){
+static void player_update_func(Player *self, ALLEGRO_KEYBOARD_STATE *ks, WORLD *world, EntitiesManager *em){
 
     player_interagir(self, ks, em);
 
@@ -499,9 +499,9 @@ Player *player_init(){
         .reset = player_reset_func,
     };
 
-    p->spritesheet = al_load_bitmap("assets/giu.png");
-    p->spritesheet_heart = al_load_bitmap("assets/coracao.png");
-    p->spritesheet_coin = al_load_bitmap("assets/moeda.png");
+    p->spritesheet = al_load_bitmap("assets/entidades/giu.png");
+    p->spritesheet_heart = al_load_bitmap("assets/entidades/coracao.png");
+    p->spritesheet_coin = al_load_bitmap("assets/entidades/moeda.png");
 
     al_convert_mask_to_alpha(p->spritesheet, al_map_rgb(105, 255, 88));
     al_convert_mask_to_alpha(p->spritesheet_heart, al_map_rgb(105, 255, 88));

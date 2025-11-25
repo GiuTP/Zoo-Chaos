@@ -1,0 +1,77 @@
+PLAT_TYPE_BLOCK           0     106   256   200
+PLAT_TYPE_ONE_WAY_BG      59    73    16    5
+PLAT_TYPE_ONE_WAY_BG      99    50    109   4
+
+
+
+PLAT_TYPE_BLOCK           256   106   256   200
+PLAT_TYPE_ONE_WAY_BG      269   80    10    6
+PLAT_TYPE_ONE_WAY_BG      317   65    10    9
+PLAT_TYPE_ONE_WAY         347   56    12    7
+PLAT_TYPE_ONE_WAY         395   65    12    7
+PLAT_TYPE_ONE_WAY_BG      436   80    8     7
+
+
+
+PLAT_TYPE_BLOCK           512   106   69    200
+PLAT_TYPE_ONE_WAY_BG      512   81    36    4
+
+PLAT_TYPE_TANK            581   106   32    95
+PLAT_TYPE_ONE_WAY         591   80    12    7
+PLAT_TYPE_WAVE            583   108   28    15
+PLAT_TYPE_DANGER          583   108   28    75
+PLAT_TYPE_BAMBOO          581   125   32    200
+
+PLAT_TYPE_BLOCK           613   106   4     200
+
+PLAT_TYPE_TANK            617   106   32    95
+PLAT_TYPE_ONE_WAY         628   80    12    7
+PLAT_TYPE_WAVE            619   108   28    15
+PLAT_TYPE_DANGER          619   108   28    75
+PLAT_TYPE_BAMBOO          617   125   32    200
+
+PLAT_TYPE_BLOCK           649   106   4     200
+
+PLAT_TYPE_TANK            653   106   32    95
+PLAT_TYPE_ONE_WAY         664   80    12    7
+PLAT_TYPE_WAVE            655   108   28    15
+PLAT_TYPE_DANGER          655   108   28    75
+PLAT_TYPE_BAMBOO          653   125   32    200
+
+PLAT_TYPE_BLOCK           685   106   4     200
+
+PLAT_TYPE_TANK            689   106   32    95
+PLAT_TYPE_ONE_WAY         700   80    12    7
+PLAT_TYPE_WAVE            691   108   28    15
+PLAT_TYPE_DANGER          691   108   28    75
+PLAT_TYPE_BAMBOO          689   125   32    200
+
+PLAT_TYPE_BLOCK           721   106   47    200
+
+
+
+PLAT_TYPE_BLOCK           768   106   256   200
+PLAT_TYPE_ONE_WAY_BG      874   64    44    5
+PLAT_TYPE_ONE_WAY_BG      862   80    52    2
+PLAT_TYPE_ONE_WAY_BG      801   84    8     4
+PLAT_TYPE_ONE_WAY_BG      850   61    12    4
+
+
+
+PLAT_TYPE_ICE_FLOOR       1024  106   256   200
+PLAT_TYPE_ICE_BLOCK       1038  95    9     55
+PLAT_TYPE_ICE_BLOCK       1257  95    9     55
+
+
+
+PLAT_TYPE_BLOCK           1280  106   16    200
+PLAT_TYPE_BLOCK_BG        1296  100   4     250
+PLAT_TYPE_BAMBOO          1300  130   216   200
+PLAT_TYPE_WAVE            1303  108   211   15
+PLAT_TYPE_DANGER          1303  108   211   90
+PLAT_TYPE_BLOCK_BG        1516  100   4     250
+PLAT_TYPE_BLOCK           1520  106   16    200
+
+
+
+PLAT_TYPE_BAMBOO          1536  106   256   200

@@ -7,7 +7,7 @@
 // ---------------------------------
 
 // Controle dos menus
-static int menu_update_func(Menu *self, ALLEGRO_EVENT *ev, int current_state){
+static int menu_update_func(MENU *self, ALLEGRO_EVENT *ev, int current_state){
     if(ev->type != ALLEGRO_EVENT_KEY_DOWN) return MENU_ACTION_NONE;
 
     // Maximo de opções dependendo do menu
@@ -41,7 +41,7 @@ static int menu_update_func(Menu *self, ALLEGRO_EVENT *ev, int current_state){
 }
 
 // Desenha os menus
-static void menu_draw_func(Menu *self, int current_state){
+static void menu_draw_func(MENU *self, int current_state){
     int bg_index = 0;
     if (current_state == STAT_WIN) bg_index = 1;
     else if (current_state == STAT_LOSE) bg_index = 2;
@@ -115,7 +115,7 @@ static void menu_draw_func(Menu *self, int current_state){
 }
 
 // Destroi o menu
-static void menu_destroy_func(Menu *self){
+static void menu_destroy_func(MENU *self){
     for(int i = 0; i < NUM_MENUS; i++){
         if (self->menu_bg[i]) al_destroy_bitmap(self->menu_bg[i]);
     }
@@ -124,18 +124,18 @@ static void menu_destroy_func(Menu *self){
 }
 
 // Inicializa o menu
-Menu *menu_init(float scale){
-    Menu *m;
-    if (!(m = malloc(sizeof(Menu)))) return NULL;
+MENU *menu_init(float scale){
+    MENU *m;
+    if (!(m = malloc(sizeof(MENU)))) return NULL;
 
     m->scale = scale;
     m->select_option = 0;
 
-    m->menu_bg[0] = al_load_bitmap("assets/cover.png");
-    m->menu_bg[1] = al_load_bitmap("assets/venceu.png");
-    m->menu_bg[2] = al_load_bitmap("assets/morreu.png");
+    m->menu_bg[0] = al_load_bitmap("assets/menus/cover.png");
+    m->menu_bg[1] = al_load_bitmap("assets/menus/venceu.png");
+    m->menu_bg[2] = al_load_bitmap("assets/menus/morreu.png");
 
-    m->spritesheet_btns = al_load_bitmap("assets/opcoes.png");
+    m->spritesheet_btns = al_load_bitmap("assets/menus/opcoes.png");
 
     al_convert_mask_to_alpha(m->spritesheet_btns, al_map_rgb(105, 255, 88));
 

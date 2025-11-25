@@ -34,25 +34,25 @@ struct Game {
 
     // Membros de gameplay
     Player *player;
-    World *world;
+    WORLD *world;
     EntitiesManager *entities;
-    Menu *menu;
-
+    MENU *menu;
+    
     // Membro de música
     ALLEGRO_AUDIO_STREAM *theme_song;
-
+    
     // Membros de controle
     bool running;
     bool redraw;
     bool pause;
     float speed_theme_song;
+    float camera_x;
     GAME_STATE current_state;
     MENU_ACTION action;
 
-
+    // Membros de input
     ALLEGRO_EVENT event;
     ALLEGRO_KEYBOARD_STATE key_state;
-    float camera_x;
 
     // ------------ ""Métodos"" do jogo ------------
     void(*run)(GAME *g);
