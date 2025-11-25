@@ -1,23 +1,32 @@
 #ifndef __GAME_H__
 #define __GAME_H__
 
+#include <allegro5/allegro.h>                   
+#include <allegro5/allegro_image.h>             
+#include <allegro5/allegro_audio.h>
+#include <allegro5/allegro_acodec.h>
+#include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_font.h>
+
 #include "engine.h"
 
-// ------------ Magic numbers ------------
-#define FPS (1.0 / 60.0)      // FPS
+// ---------------------------------
+// Magic numbers
+// ---------------------------------
+#define FPS (1.0 / 60.0)    // FPS
 #define WIDTH_SCREEN 1280   // Largura da tela
 #define HEIGHT_SCREEN 720   // Altura da tela
 #define SCALE 5.0f          // Escala do jogo
 
+// ---------------------------------
+// Enums
+// ---------------------------------
 typedef enum {
     STAT_MENU,
     STAT_PLAYING,
     STAT_WIN,
     STAT_LOSE
 } GAME_STATE;
-
-typedef struct menu Menu;
-typedef enum MENU_ACTION MENU_ACTION;
 
 // ---------------------------------
 // Motor do jogo
@@ -56,8 +65,8 @@ struct Game {
     float camera_x;
 
     // ------------ ""Métodos"" do jogo ------------
-    void(*game_run)(GAME *g);
-    void(*game_destroy)(GAME *g);
+    void(*run)(GAME *g);
+    void(*destroy)(GAME *g);
 };
 
 

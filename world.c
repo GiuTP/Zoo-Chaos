@@ -8,7 +8,7 @@ typedef struct {
     float offset_x;
 } TileConfig;
 
-static TileConfig TILE_CONFIGS[TILESET_SIZE];
+static TileConfig TILE_CONFIGS[NUM_WORLD_SPRITESHEET];
 
 static void setup_tile_configs(float escala){
     TileConfig padrao = {
@@ -89,7 +89,7 @@ static void world_destroy_func(World *self)
         }
     }
 
-    for (int i = 0; i < TILESET_SIZE; i++){
+    for (int i = 0; i < NUM_WORLD_SPRITESHEET; i++){
         if (self->tileset[i]){
             al_destroy_bitmap(self->tileset[i]);
         }
@@ -262,7 +262,7 @@ World *world_init(void)
         }
     }
 
-    for (int i = 0; i < TILESET_SIZE; i++) w->tileset[i] = NULL;
+    for (int i = 0; i < NUM_WORLD_SPRITESHEET; i++) w->tileset[i] = NULL;
 
     w->tileset[PLAT_TYPE_BLOCK] = al_load_bitmap("assets/chao.png");
     w->tileset[PLAT_TYPE_ONE_WAY] = al_load_bitmap("assets/plataforma.png");

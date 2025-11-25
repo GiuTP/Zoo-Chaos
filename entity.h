@@ -16,7 +16,7 @@ typedef enum {
     ENT_PANDA,
     ENT_VINE,
     ENT_COIN
-} EntityType;
+} ENTITY_TYPE;
 
 typedef enum {
     STAT_IDLE,
@@ -29,7 +29,7 @@ typedef enum {
 } EntityStatus;
 
 typedef struct {
-    EntityType type;
+    ENTITY_TYPE type;
     EntityStatus status;
     bool active;
 
@@ -55,7 +55,7 @@ typedef struct {
 } Entity;
 
 #define MAX_ENTITIES 50
-#define NUM_ENTITIES_SPRITESHEET 10
+#define NUM_ENTITIES_SPRITESHEET 9
 
 typedef struct entities_manager EntitiesManager;
 
@@ -66,7 +66,7 @@ struct entities_manager{
 
     ALLEGRO_BITMAP *spritesheets[NUM_ENTITIES_SPRITESHEET];
 
-    void (*spawn)(EntitiesManager *self, EntityType type,
+    void (*spawn)(EntitiesManager *self, ENTITY_TYPE type,
                     float x, float y, float range_dist);
     void (*update)(EntitiesManager *self, Player *p);
     void (*draw)(EntitiesManager *self, float camera_x);

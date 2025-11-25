@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "game.h"
 
 // ---------------------------------
@@ -57,6 +61,42 @@ static void allegro_init_func(GAME *self){
     al_register_event_source(self->queue, al_get_display_event_source(self->display));
 }
 
+// Conversão de string para ENTITY_TYPE
+static ENTITY_TYPE string_to_entity_type_func(const char *str){
+    if(strcmp(str, "ENT_BEE") == 0)     return ENT_BEE;
+    if(strcmp(str, "ENT_FLOWER") == 0)  return ENT_FLOWER;
+    if(strcmp(str, "ENT_SHARK") == 0)   return ENT_SHARK;
+    if(strcmp(str, "ENT_BIRD") == 0)    return ENT_BIRD;
+    if(strcmp(str, "ENT_PENGUIN") == 0) return ENT_PENGUIN;
+    if(strcmp(str, "ENT_PIRANHA") == 0) return ENT_PIRANHA;
+    if(strcmp(str, "ENT_PANDA") == 0)   return ENT_PANDA;
+    if(strcmp(str, "ENT_VINE") == 0)    return ENT_VINE;
+    if(strcmp(str, "ENT_COIN") == 0)    return ENT_COIN;
+
+    return -1;
+}
+
+// Carrega as entidades de um arquivo
+static void load_entities_from_file_func(EntitiesManager *e, const char *filename){
+    FILE *arc = fopen(filename, "r");
+    if(!arc) {
+        fprintf(stderr, "Arquivo %s nao encontrado. Sem entidades.\n", filename);
+        return;
+    }
+
+    char type_str[50];
+    float x, y, range;
+
+    while(fscanf(arc, "%49s %f %f %f", type_str, &x, &y, &range) == 4){
+        int type = string_to_entity_type_func(type_str);
+
+        if(type != -1) e->spawn(e, type, x * SCALE, y * SCALE, range);
+        else printf("Invalid entity type: %s\n", type_str);
+    }
+
+    fclose(arc);
+}
+
 // Inicializações da gameplay
 static void gameplay_init_func(GAME *self){
     // Inicialização das variáveis do jogo
@@ -73,18 +113,7 @@ static void gameplay_init_func(GAME *self){
     INIT_TEST(self->menu, "menu");
 
     // Spawn de entidades
-    self->entities->spawn(self->entities, ENT_PENGUIN, 200 * 5.0, 100 * 5.0, 100);
-    self->entities->spawn(self->entities, ENT_BEE, 300 * 5.0, 80 * 5.0, 0);
-    self->entities->spawn(self->entities, ENT_FLOWER, 300 * 5.0, 90 * 5.0, 0);
-    self->entities->spawn(self->entities, ENT_PANDA, 400 * 5.0, 80 * 5.0, 100);
-    self->entities->spawn(self->entities, ENT_PIRANHA, 400 * 5.0, 50 * 5.0, 200);
-    self->entities->spawn(self->entities, ENT_SHARK, 600 * 5.0, 80 * 5.0, 100);
-    self->entities->spawn(self->entities, ENT_BIRD, 3840 + (3 * 5.0), 28 * 5.0, 245);
-    self->entities->spawn(self->entities, ENT_VINE, 150 *5.0, 50 * 5.0, 0);
-    self->entities->spawn(self->entities, ENT_COIN, 150 * 5.0, 30 * 5.0, 0);
-    self->entities->spawn(self->entities, ENT_COIN, 160 * 5.0, 30 * 5.0, 0);
-    self->entities->spawn(self->entities, ENT_COIN, 170 * 5.0, 30 * 5.0, 0);
-    self->entities->spawn(self->entities, ENT_COIN, 180 * 5.0, 30 * 5.0, 0);
+    load_entities_from_file_func(self->entities, "assets/entity_map.txt");
 }
 
 // Execução do game loop
@@ -155,6 +184,8 @@ static void game_run_func(GAME *self){
                         self->entities->reset_all(self->entities);
 
                         self->camera_x = 0;
+
+                        self->current_state = STAT_LOSE;
                     }
 
                     // Gatilho de fim de fase
@@ -231,10 +262,6 @@ static void game_destroy_func(GAME *self){
     al_destroy_display(self->display);
     al_destroy_font(self->font);
     
-    al_uninstall_keyboard();
-    al_uninstall_audio();
-    al_uninstall_system();
-    
     al_detach_audio_stream(self->theme_song);
     al_destroy_audio_stream(self->theme_song);
 
@@ -243,7 +270,10 @@ static void game_destroy_func(GAME *self){
     self->entities->destroy(self->entities);
     self->menu->destroy(self->menu);
 
-    free(self);
+    al_uninstall_keyboard();
+    al_uninstall_audio();
+
+    free(self);     
 }
 
 GAME *game_init(void){
@@ -263,8 +293,8 @@ GAME *game_init(void){
     g->action = MENU_ACTION_NONE;
 
     // Metódos
-    g->game_run = game_run_func;
-    g->game_destroy = game_destroy_func;
+    g->run = game_run_func;
+    g->destroy = game_destroy_func;
 
     return g;
 }

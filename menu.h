@@ -1,10 +1,9 @@
 #ifndef __MENU_H__
 #define __MENU_H__
 
-#include <allegro5/allegro5.h>
-#include <allegro5/allegro_image.h>
+#include "engine.h"
 
-typedef enum MENU_ACTION{
+typedef enum {
     MENU_ACTION_NONE,
     MENU_ACTION_PLAY,
     MENU_ACTION_QUIT

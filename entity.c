@@ -302,7 +302,7 @@ static void static_ai_vine(Entity *e){
 
 }
 
-static void entity_spawn_func(EntitiesManager *self, EntityType type, 
+static void entity_spawn_func(EntitiesManager *self, ENTITY_TYPE type, 
                                 float x, float y, float range_dist){
     if (self->num_entities >= MAX_ENTITIES) return;
     
