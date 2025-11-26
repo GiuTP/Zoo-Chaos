@@ -202,41 +202,41 @@ static void world_draw_func(WORLD *self, float camera_x){
         }
     }
 
-    // DEBUG
-    ALLEGRO_COLOR debug_color;
-    for (int i = 0; i < self->num_plataforms; i++){
-        PLATAFORM p = self->plataforms[i];
+    // // DEBUG
+    // ALLEGRO_COLOR debug_color;
+    // for (int i = 0; i < self->num_plataforms; i++){
+    //     PLATAFORM p = self->plataforms[i];
 
-        if(p.x + p.w >= camera_x && p.x <= camera_x + screen_x){
-            switch(p.type){
-                case PLAT_TYPE_BLOCK:
-                case PLAT_TYPE_BLOCK_BG:
-                case PLAT_TYPE_ICE_BLOCK:
-                case PLAT_TYPE_ICE_FLOOR:
-                case PLAT_TYPE_BAMBOO:
-                    debug_color = al_map_rgb(255, 0, 0);
-                    break;
+    //     if(p.x + p.w >= camera_x && p.x <= camera_x + screen_x){
+    //         switch(p.type){
+    //             case PLAT_TYPE_BLOCK:
+    //             case PLAT_TYPE_BLOCK_BG:
+    //             case PLAT_TYPE_ICE_BLOCK:
+    //             case PLAT_TYPE_ICE_FLOOR:
+    //             case PLAT_TYPE_BAMBOO:
+    //                 debug_color = al_map_rgb(255, 0, 0);
+    //                 break;
             
-                case PLAT_TYPE_ONE_WAY:
-                case PLAT_TYPE_ONE_WAY_BG:
-                    debug_color = al_map_rgb(0, 255, 0);
-                    break;
+    //             case PLAT_TYPE_ONE_WAY:
+    //             case PLAT_TYPE_ONE_WAY_BG:
+    //                 debug_color = al_map_rgb(0, 255, 0);
+    //                 break;
             
-                default:
-                    debug_color = al_map_rgb(0, 0, 255);
-                    break;
-            }
+    //             default:
+    //                 debug_color = al_map_rgb(0, 0, 255);
+    //                 break;
+    //         }
 
-            float x = p.x - camera_x;
-            float y = p.y;
+    //         float x = p.x - camera_x;
+    //         float y = p.y;
             
-            al_draw_rectangle(
-                x, y,
-                x + p.w, y + p.h,
-                debug_color, 2
-            );
-        }
-    }
+    //         al_draw_rectangle(
+    //             x, y,
+    //             x + p.w, y + p.h,
+    //             debug_color, 2
+    //         );
+    //     }
+    // }
 }
 
 // Destroi o mundo

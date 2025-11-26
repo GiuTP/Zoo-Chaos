@@ -48,7 +48,7 @@ static void update_collision_player(Player *p, Entity *e){
         }
 
         float pe_player = py + ph;
-        float limite_stomp = ey + eh - (5.0 * p->escala);
+        float limite_stomp = ey + (eh * 0.5f);
         bool was_fall = p->vel_y > 0 || !p->on_ground;
 
         if (e->can_die && !e->invincible && was_fall && p->vel_y > 0 && pe_player < limite_stomp){
@@ -196,7 +196,7 @@ static void update_ai_patrol(Entity *e){
     float current_speed = e->v_x;
 
     if (e->status == STAT_SLIDE) current_speed *= 2.0;
-    if (e->status == STAT_ROLL) current_speed *= 1.5;
+    if (e->status == STAT_ROLL) current_speed *= 2.5;
 
     e->x += current_speed * e->direction;
 
@@ -230,7 +230,7 @@ static void update_ai_shark(Entity *e){
         if (e->state_timer > 2.0){
             e->status = STAT_JUMP;
 
-            e->v_y = -14.0;
+            e->v_y = -16.0;
 
             e->state_timer = 0;
         }
@@ -561,11 +561,11 @@ static void entity_draw_func(EntitiesManager *self, float camera_x){
                         dst_w, dst_h,
                         0
                     );
-                    al_draw_rectangle(
-                    e->x - camera_x, e->y,
-                    (e->x - camera_x) + e->w, e->y + e->h,
-                    al_map_rgb(255, 0, 0), 2
-                    );
+                    // al_draw_rectangle(
+                    // e->x - camera_x, e->y,
+                    // (e->x - camera_x) + e->w, e->y + e->h,
+                    // al_map_rgb(255, 0, 0), 2
+                    // );
                 }
             }
         }

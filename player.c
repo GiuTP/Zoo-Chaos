@@ -36,6 +36,9 @@ static void player_andar(Player *p, ALLEGRO_KEYBOARD_STATE *key_state, WORLD *w)
     p->vel_x = 0;
     p->andando = false;
 
+    float current_speed = PLAYER_SPEED;
+    if(p->modo_estrela) current_speed *= 1.5f;
+
     // Teclas pressionadas
     bool press_left = al_key_down(key_state, ALLEGRO_KEY_A);
     bool press_right = al_key_down(key_state, ALLEGRO_KEY_D);
@@ -45,13 +48,13 @@ static void player_andar(Player *p, ALLEGRO_KEYBOARD_STATE *key_state, WORLD *w)
     
     // Andar para esquerda
     if (press_left){
-        p->vel_x = -PLAYER_SPEED;
+        p->vel_x = -current_speed;
         p->sprite_y_origem = 1 * PLAYER_HEIGHT_FRAME;
         p->andando = true;
     }
     // Andar para direita (minuscula otimizacao)
     else if (press_right){
-        p->vel_x = PLAYER_SPEED;
+        p->vel_x = current_speed;
         p->sprite_y_origem = 0 * PLAYER_HEIGHT_FRAME;
         p->andando = true;
     }
@@ -356,21 +359,21 @@ static void player_draw_func(Player *self, float camera_x){
         0
     );
 
-    float h_debug = (self->duck) ? 10 : 18;
-    float off_y_debug = (self->duck) ? 15 : 7;
+    // float h_debug = (self->duck) ? 10 : 18;
+    // float off_y_debug = (self->duck) ? 15 : 7;
 
-    float hx = self->pos_x + (PLAYER_HITBOX_OFFSET_X * self->escala) - camera_x;
-    float hy = self->pos_y + (off_y_debug * self->escala);
+    // float hx = self->pos_x + (PLAYER_HITBOX_OFFSET_X * self->escala) - camera_x;
+    // float hy = self->pos_y + (off_y_debug * self->escala);
 
-    float hw = PLAYER_HITBOX_WIDTH * self->escala;
-    float hh = h_debug * self->escala;
+    // float hw = PLAYER_HITBOX_WIDTH * self->escala;
+    // float hh = h_debug * self->escala;
 
-    al_draw_rectangle(
-        hx, hy,
-        hx + hw, hy + hh,
-        al_map_rgb(255, 0, 0),
-        1
-    );
+    // al_draw_rectangle(
+    //     hx, hy,
+    //     hx + hw, hy + hh,
+    //     al_map_rgb(255, 0, 0),
+    //     1
+    // );
 
     if (self->spritesheet_heart){
         float hud_scale = 1.1;
@@ -457,6 +460,9 @@ static void player_reset_func(Player *self){
 }
 
 static void player_destroy_func(Player *self){
+    al_destroy_bitmap(self->spritesheet);
+    al_destroy_bitmap(self->spritesheet_heart);
+    al_destroy_bitmap(self->spritesheet_coin);
     free(self);
 }
 

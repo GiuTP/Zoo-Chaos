@@ -9,7 +9,7 @@
 // Constantes do player
 #define PLAYER_WIDTH_FRAME 32
 #define PLAYER_HEIGHT_FRAME 32
-#define PLAYER_SPEED 12.0
+#define PLAYER_SPEED 8.0
 #define PLAYER_VIDA_MAX 3
 #define HEART_SIZE 32
 
