@@ -2,6 +2,7 @@
 
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
 [![LinkedIn][linkedin-shield]][linkedin-url]
 
 <br />
@@ -278,6 +279,8 @@ Link do projeto: [https://github.com/GiuTP/Zoo-Chaos](https://github.com/GiuTP/Z
 [stars-url]: https://github.com/GiuTP/Zoo-Chaos/stargazers
 [issues-shield]: https://img.shields.io/github/issues/GiuTP/Zoo-Chaos.svg?style=for-the-badge
 [issues-url]: https://github.com/GiuTP/Zoo-Chaos/issues
+[license-shield]: https://img.shields.io/github/license/GiuTP/Zoo-Chaos.svg?style=for-the-badge
+[license-url]: https://github.com/GiuTP/Zoo-Chaos/blob/main/LICENSE
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://www.linkedin.com/in/giuliano-tavares/
 [C-badge]: https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white
