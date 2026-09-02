@@ -1,5 +1,6 @@
-#include "game.h"
 #include <stdio.h>
+
+#include "game.h"
 
 
 // ---------------------------------

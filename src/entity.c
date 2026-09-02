@@ -1,8 +1,8 @@
-#include "entity.h"
-#include "player.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
+#include "entity.h"
+#include "player.h"
 
 static int check_overlap(float x1, float y1, float w1, float h1,
                          float x2, float y2, float w2, float h2){
@@ -333,8 +333,8 @@ static void entity_spawn_func(EntitiesManager *self, ENTITY_TYPE type,
 
     switch (type){
         case ENT_BEE:
-            e->w = (27/2) * scale;
-            e->h = (22/2) * scale;
+            e->w = (27.0/2) * scale;
+            e->h = (22.0/2) * scale;
 
             e->draw_offset_x = -1 * scale;
             e->draw_offset_y = -2 * scale;
@@ -444,8 +444,8 @@ static void entity_spawn_func(EntitiesManager *self, ENTITY_TYPE type,
             e->max_frame = 3;
             break;
         case ENT_COIN:
-            e->w = (16/2) * scale;
-            e->h = (16/2) * scale;
+            e->w = (16.0/2) * scale;
+            e->h = (16.0/2) * scale;
 
             e->draw_offset_x = 0;
             e->draw_offset_y = 0;
@@ -548,8 +548,8 @@ static void entity_draw_func(EntitiesManager *self, float camera_x){
                     }
 
                     else if (e->type == ENT_COIN){
-                        dst_w = (16/2) * scale;
-                        dst_h = (16/2) * scale;
+                        dst_w = (16.0/2) * scale;
+                        dst_h = (16.0/2) * scale;
                     }
 
                     al_draw_scaled_bitmap(

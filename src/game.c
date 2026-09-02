@@ -194,7 +194,7 @@ static void game_run_func(GAME *self){
                         self->entities->reset_all(self->entities);
                         self->camera_x = 0;
                         al_set_audio_stream_playing(self->theme_song, false);
-
+                        
                         self->current_state = STAT_WIN;
                     }
 
@@ -202,27 +202,27 @@ static void game_run_func(GAME *self){
                     if(self->camera_x < 0) self->camera_x = 0;
                     if(self->camera_x > world_witdh - WIDTH_SCREEN) self->camera_x = world_witdh - WIDTH_SCREEN;
                 }
-            self->redraw = true;
-        }
-        else if(self->event.type == ALLEGRO_EVENT_KEY_DOWN){
-            // Sistema de pause
-            if(self->event.keyboard.keycode == ALLEGRO_KEY_ESCAPE){
-                self->pause = !self->pause;
-
-                if(self->pause) al_set_audio_stream_playing(self->theme_song, false);
-                else al_set_audio_stream_playing(self->theme_song, true);
+                self->redraw = true;
             }
-            // Sistema para voltar para o menu inicial
-            else if(self->event.keyboard.keycode == ALLEGRO_KEY_Q && self->pause){
-                self->current_state = STAT_MENU;
-                self->pause = false;
-
-                al_set_audio_stream_playing(self->theme_song, false);
-                self->player->reset(self->player);
-                self->entities->reset_all(self->entities);
-                self->camera_x = 0;
+            else if(self->event.type == ALLEGRO_EVENT_KEY_DOWN){
+                // Sistema de pause
+                if(self->event.keyboard.keycode == ALLEGRO_KEY_ESCAPE){
+                    self->pause = !self->pause;
+                
+                    if(self->pause) al_set_audio_stream_playing(self->theme_song, false);
+                    else al_set_audio_stream_playing(self->theme_song, true);
+                }
+                // Sistema para voltar para o menu inicial
+                else if(self->event.keyboard.keycode == ALLEGRO_KEY_Q && self->pause){
+                    self->current_state = STAT_MENU;
+                    self->pause = false;
+                
+                    al_set_audio_stream_playing(self->theme_song, false);
+                    self->player->reset(self->player);
+                    self->entities->reset_all(self->entities);
+                    self->camera_x = 0;
+                }
             }
-        }
         }
         // Começa a desenha baseados no estado do mundo e das entidades
         if(self->redraw && al_is_event_queue_empty(self->queue)){

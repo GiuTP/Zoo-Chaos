@@ -1,18 +1,31 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 $(shell pkg-config --cflags allegro-5 allegro_main-5 allegro_font-5 allegro_image-5 allegro_primitives-5 allegro_audio-5 allegro_acodec-5)
-LIBS = $(shell pkg-config --libs allegro-5 allegro_main-5 allegro_font-5 allegro_image-5 allegro_primitives-5 allegro_audio-5 allegro_acodec-5) -lm
+CC      = gcc
+CFLAGS  = -Wall -Wextra -std=c11 -Iinclude \
+        	$(shell pkg-config --cflags allegro-5 allegro_main-5 allegro_font-5 \
+                                    	allegro_image-5 allegro_primitives-5 \
+                                    	allegro_audio-5 allegro_acodec-5)
+LIBS    = $(shell pkg-config --libs allegro-5 allegro_main-5 allegro_font-5 \
+                                    allegro_image-5 allegro_primitives-5 \
+                                    allegro_audio-5 allegro_acodec-5) -lm
 
-TARGET = caos_in_the_zoo
-SRCS = $(wildcard *.c)
-OBJS = $(SRCS:.c=.o)
+TARGET  = bin/chaos_zoo
+SRCS    = $(wildcard src/*.c)
+OBJS    = $(patsubst src/%.c, build/%.o, $(SRCS))
 
 all: $(TARGET)
 
-$(TARGET) : $(OBJS)
-	$(CC) -o $(TARGET) $(OBJS) $(LIBS)
+$(TARGET): $(OBJS) | bin
+	$(CC) -o $@ $^ $(LIBS)
 
-%.o : %.c
+build/%.o: src/%.c | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
+bin:
+	mkdir -p bin
+
+build:
+	mkdir -p build
+
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -rf build bin
+
+.PHONY: all clean

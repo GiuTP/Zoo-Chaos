@@ -1,5 +1,6 @@
-#include "player.h"
 #include <math.h>
+
+#include "player.h"
 
 // Constantes Internas
 #define PLAYER_VIDA_INICIAL 3
