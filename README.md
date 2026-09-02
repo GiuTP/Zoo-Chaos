@@ -40,6 +40,7 @@
       </ul>
     </li>
     <li><a href="#-dificuldades-e-aprendizados">Dificuldades e Aprendizados</a></li>
+    <li><a href="#-licença">Licença</a></li>
     <li><a href="#-contato">Contato</a></li>
     <li><a href="#-agradecimentos">Agradecimentos</a></li>
   </ol>
@@ -236,6 +237,16 @@ Este projeto foi um grande desafio e uma fonte enorme de aprendizado. As princip
 - **Transformações angulares** — implementar o balanço do cipó com `sin`/`cos` e fazer o pássaro voar em trajetória diagonal com reflexão nos limites envolveu matemática que foi desafiadora de depurar visualmente.
 
 Apesar das dificuldades, o resultado final é um jogo completo, jogável, com artes 100% autorais — algo do qual tenho muito orgulho.
+
+<p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
+
+---
+
+## 📄 Licença
+
+O código-fonte deste projeto está distribuído sob a licença **MIT**. Consulte o arquivo `LICENSE` para mais informações.
+
+As artes do jogo — sprites, backgrounds, menus e demais visuais — são de **autoria exclusiva** e não estão cobertas por esta licença.
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
