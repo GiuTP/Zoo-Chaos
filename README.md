@@ -55,6 +55,8 @@ O jogo se passa em um zoológico caótico onde o personagem principal — o pró
 
 O objetivo é simples: **chegar ao extremo oposto do mapa**. Mas os animais no caminho não vão facilitar.
 
+![Imagem de demonstração de uma parte jogo](assets/screenshots/screenshot.png)
+
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
 ### 🛠 Construído com
