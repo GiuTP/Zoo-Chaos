@@ -1,4 +1,4 @@
-
+<a id="readme-top"></a>
 
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
@@ -56,7 +56,6 @@
 O jogo se passa em um zoológico caótico onde o personagem principal — o próprio autor — precisa atravessar o mapa enquanto desvia e enfrenta os animais que escaparam dos recintos. Todas as artes do jogo são **autorais**, criadas especialmente para o projeto.
 
 O objetivo é simples: **chegar ao extremo oposto do mapa**. Mas os animais no caminho não vão facilitar.
-
 
 <p align="right">(<a href="#readme-top">voltar ao topo</a>)</p>
 
